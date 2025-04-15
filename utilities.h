@@ -30,6 +30,18 @@ xt::xarray<float> convert_vec_inputs(const std::vector<xt::xarray<float>>& input
 xt::xtensor<float, 2> index_3d(xt::xtensor<float, 3>& inputs, size_t index);
 void set_3d(xt::xtensor<float, 3>& inputs, xt::xtensor<float, 2>& value, size_t index);
 
+void update_adam_1d(xt::xtensor<float, 1>& weights, xt::xtensor<float, 1>& grad_weights,
+                    xt::xtensor<float, 1>& m_weights, xt::xtensor<float, 1>& v_weights,
+                    float lr, float beta1, float beta2, float epsilon, size_t timestep);
+
+void update_adam_2d(xt::xtensor<float, 2>& weights, xt::xtensor<float, 2>& grad_weights,
+                    xt::xtensor<float, 2>& m_weights, xt::xtensor<float, 2>& v_weights,
+                    float lr, float beta1, float beta2, float epsilon, size_t timestep);
+
+void update_adam_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad_weights,
+                    xt::xtensor<float, 4>& m_weights, xt::xtensor<float, 4>& v_weights,
+                    float lr, float beta1, float beta2, float epsilon, size_t timestep);
+
 template <typename Shape>
 void print_shape(const Shape& shape) {
     std::string s;

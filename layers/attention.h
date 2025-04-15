@@ -17,15 +17,10 @@ private:
     std::vector<size_t> input_size;
     std::vector<size_t> output_size;
 
-    xt::xtensor<float, 2> weights_q;
-    xt::xtensor<float, 2> weights_k;
-    xt::xtensor<float, 2> weights_v;
-    xt::xtensor<float, 2> weights_o;
-
-    xt::xtensor<float, 2> grad_weights_q;
-    xt::xtensor<float, 2> grad_weights_k;
-    xt::xtensor<float, 2> grad_weights_v;
-    xt::xtensor<float, 2> grad_weights_o;
+    xt::xtensor<float, 2> weights_q, grad_weights_q, m_weights_q, v_weights_q;
+    xt::xtensor<float, 2> weights_k, grad_weights_k, m_weights_k, v_weights_k;
+    xt::xtensor<float, 2> weights_v, grad_weights_v, m_weights_v, v_weights_v;
+    xt::xtensor<float, 2> weights_o, grad_weights_o, m_weights_o, v_weights_o;
 
     std::vector<xt::xtensor<float, 2>> Qi;
     std::vector<xt::xtensor<float, 2>> Ki;
@@ -48,6 +43,7 @@ public:
     xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) override;
     xt::xarray<float> backprop(const xt::xarray<float>& delta, bool calc_delta_activation) override;
     void update(float lr) override;
+    void update_adam(float lr, float beta1, float beta2, float epsilon) override;
 
     [[nodiscard]] ActivationID get_activation_id() override { return ActivationID::NONE; }
     [[nodiscard]] xt::xarray<float> get_outputs() override { return outputs; }

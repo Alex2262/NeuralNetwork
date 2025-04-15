@@ -129,8 +129,8 @@ void test_mnist() {
     nn.add_layer<Dense>(128, ActivationID::RELU);
     nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
 
-    nn.SGD(train_images, train_labels, test_images, test_labels, 6, 64, 0.1);
-
+    // nn.SGD(train_images, train_labels, test_images, test_labels, 6, 64, 0.1);
+    nn.Adam(train_images, train_labels, test_images, test_labels, 10, 64, 0.001, 0.9, 0.999, 1e-8);
     show_images(nn, train_images, train_labels);
 }
 
@@ -152,7 +152,8 @@ void test_mnist_cnn() {
     nn.add_layer<Flatten>();
     nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
 
-    nn.SGD(train_images, train_labels, test_images, test_labels, 15, 64, 0.02);
+    // nn.SGD(train_images, train_labels, test_images, test_labels, 10, 64, 0.02);
+    nn.Adam(train_images, train_labels, test_images, test_labels, 10, 64, 0.001, 0.9, 0.999, 1e-8);
 }
 
 

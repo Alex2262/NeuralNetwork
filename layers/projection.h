@@ -24,6 +24,8 @@ private:
     xt::xtensor<float, 3> outputs;
     xt::xtensor<float, 3> activations;
 
+    xt::xtensor<float, 2> grad_embedding_matrix, m_embedding_matrix, v_embedding_matrix;
+
     ActivationFunction activation_function;
     ActivationDerivative activation_derivative;
 
@@ -35,6 +37,7 @@ public:
     xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) override;
     xt::xarray<float> backprop(const xt::xarray<float>& delta, bool calc_delta_activation) override;
     void update(float lr) override;
+    void update_adam(float lr, float beta1, float beta2, float epsilon) override;
 
     [[nodiscard]] ActivationID get_activation_id() override { return activation_id; }
     [[nodiscard]] xt::xarray<float> get_outputs() override { return outputs; }

@@ -25,10 +25,22 @@ Attention::Attention(const std::vector<size_t>& p_input_size, size_t p_num_heads
     weights_v = xt::random::rand<float>({d_model, d_model}, -1.0, 1.0);
     weights_o = xt::random::rand<float>({d_model, d_model}, -1.0, 1.0);
 
-    grad_weights_q = xt::zeros<float>({d_model, d_model});
-    grad_weights_k = xt::zeros<float>({d_model, d_model});
-    grad_weights_v = xt::zeros<float>({d_model, d_model});
-    grad_weights_o = xt::zeros<float>({d_model, d_model});
+    grad_weights_q = xt::zeros_like(weights_q);
+    grad_weights_k = xt::zeros_like(weights_k);
+    grad_weights_v = xt::zeros_like(weights_v);
+    grad_weights_o = xt::zeros_like(weights_o);
+
+    m_weights_q = xt::zeros_like(weights_q);
+    m_weights_k = xt::zeros_like(weights_k);
+    m_weights_v = xt::zeros_like(weights_v);
+    m_weights_o = xt::zeros_like(weights_o);
+
+    v_weights_q = xt::zeros_like(weights_q);
+    v_weights_k = xt::zeros_like(weights_k);
+    v_weights_v = xt::zeros_like(weights_v);
+    v_weights_o = xt::zeros_like(weights_o);
+
+    timestep = 0;
 }
 
 xt::xarray<float> Attention::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
@@ -131,6 +143,11 @@ xt::xarray<float> Attention::backprop(const xt::xarray<float>& delta, bool calc_
                                     xt::linalg::dot(delta_V, xt::transpose(weights_v)) +
                                     delta;
 
+    grad_weights_q /= batch_size;
+    grad_weights_k /= batch_size;
+    grad_weights_v /= batch_size;
+    grad_weights_o /= batch_size;
+
     return xt::reshape_view(delta_E, {batch_size, seq_len, d_model});
 }
 
@@ -144,4 +161,13 @@ void Attention::update(float lr) {
     grad_weights_k.fill(0);
     grad_weights_v.fill(0);
     grad_weights_o.fill(0);
+}
+
+void Attention::update_adam(float lr, float beta1, float beta2, float epsilon) {
+    timestep++;
+
+    update_adam_2d(weights_q, grad_weights_q, m_weights_q, v_weights_q, lr, beta1, beta2, epsilon, timestep);
+    update_adam_2d(weights_k, grad_weights_k, m_weights_k, v_weights_k, lr, beta1, beta2, epsilon, timestep);
+    update_adam_2d(weights_v, grad_weights_v, m_weights_v, v_weights_v, lr, beta1, beta2, epsilon, timestep);
+    update_adam_2d(weights_o, grad_weights_o, m_weights_o, v_weights_o, lr, beta1, beta2, epsilon, timestep);
 }

@@ -42,6 +42,10 @@ add_executable(NeuralNetwork main.cpp
         layers/attention.h
         layers/projection.cpp
         layers/projection.h
+        llm/core.cpp
+        llm/core.h
+        layers/res_add.cpp
+        layers/res_add.h
 )
 
 target_link_libraries(NeuralNetwork

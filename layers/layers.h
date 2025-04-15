@@ -12,6 +12,8 @@
 
 class Layer {
 public:
+    size_t timestep = 0;
+
     virtual ~Layer() = default;
 
     virtual std::vector<size_t> get_input_size() const = 0;
@@ -22,6 +24,7 @@ public:
     virtual xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) = 0;
     virtual xt::xarray<float> backprop(const xt::xarray<float>& delta, bool calc_delta_activation) = 0;
     virtual void update(float lr) = 0;
+    virtual void update_adam(float lr, float beta1, float beta2, float epsilon) = 0;
 };
 
 

@@ -25,7 +25,11 @@ public:
 
     void update(const xt::xarray<float>& inputs,
                 const xt::xarray<float>& labels,
-                float scaled_lr);
+                float lr);
+
+    void update_adam(const xt::xarray<float>& inputs,
+                     const xt::xarray<float>& labels,
+                     float lr, float beta1, float beta2, float epsilon);
 
     float evaluate(const xt::xarray<float>& inputs, const xt::xarray<float>& labels);
 
@@ -34,6 +38,12 @@ public:
              const std::vector<xt::xarray<float>>& test_inputs,
              const std::vector<xt::xarray<float>>& test_labels,
              size_t epochs, size_t mini_batch_size, float lr);
+
+    void Adam(const std::vector<xt::xarray<float>>& training_inputs,
+              const std::vector<xt::xarray<float>>& training_labels,
+              const std::vector<xt::xarray<float>>& test_inputs,
+              const std::vector<xt::xarray<float>>& test_labels,
+              size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2, float epsilon);
 
     template <typename LayerType, typename... Args>
     void add_layer(Args&&... args) {

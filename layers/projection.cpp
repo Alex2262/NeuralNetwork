@@ -19,6 +19,12 @@ Projection::Projection(const std::vector<size_t>& p_input_size, Embedding* p_emb
     activation_id = p_activation_id;
     activation_function = get_activation_function(activation_id);
     activation_derivative = get_activation_derivative(activation_id);
+
+    grad_embedding_matrix = xt::zeros_like(embedding_matrix);
+    m_embedding_matrix = xt::zeros_like(embedding_matrix);
+    v_embedding_matrix = xt::zeros_like(embedding_matrix);
+
+    timestep = 0;
 }
 
 xt::xarray<float> Projection::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
@@ -45,10 +51,14 @@ xt::xarray<float> Projection::backprop(const xt::xarray<float>& delta, bool calc
     //     next_delta = delta * activation_derivative(outputs);
     // }
 
+    size_t seq_len = embedding_layer->get_curr_seq_len();
+    size_t batch_size = input_activation.shape()[0] / seq_len;
+
     xt::xtensor<float, 2>& embedding_matrix = embedding_layer->get_embedding_matrix();
-    xt::xtensor<float, 2>& grad_embedding_matrix = embedding_layer->get_grad_embedding_matrix();
 
     grad_embedding_matrix += xt::linalg::dot(xt::transpose(delta), input_activation);
+
+    grad_embedding_matrix /= batch_size;
 
     xt::xtensor<float, 2> delta_out = xt::linalg::dot(delta, embedding_matrix);
     return delta_out;
@@ -56,8 +66,15 @@ xt::xarray<float> Projection::backprop(const xt::xarray<float>& delta, bool calc
 
 void Projection::update(float lr) {
     xt::xtensor<float, 2>& embedding_matrix = embedding_layer->get_embedding_matrix();
-    xt::xtensor<float, 2>& grad_embedding_matrix = embedding_layer->get_grad_embedding_matrix();
 
     embedding_matrix -= lr * grad_embedding_matrix;
     grad_embedding_matrix.fill(0);
+}
+
+void Projection::update_adam(float lr, float beta1, float beta2, float epsilon) {
+    timestep++;
+
+    xt::xtensor<float, 2>& embedding_matrix = embedding_layer->get_embedding_matrix();
+
+    update_adam_2d(embedding_matrix, grad_embedding_matrix, m_embedding_matrix, v_embedding_matrix, lr, beta1, beta2, epsilon, timestep);
 }

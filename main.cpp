@@ -8,8 +8,8 @@ int main() {
     openblas_set_num_threads(8);
     std::cout << "OpenBLAS threads: " << openblas_get_num_threads() << std::endl;
 
-    // test_mnist_cnn();
-    test_mnist();
+    test_mnist_cnn();
+    // test_mnist();
 
     return 0;
 }

@@ -22,8 +22,16 @@ Convolution::Convolution(std::vector<size_t>& p_input_size, size_t p_num_filters
     weights = xt::random::randn<float>({num_filters, filter_size, filter_size, input_size[2]});
     biases = xt::random::randn<float>({num_filters});
 
-    grad_weights = xt::zeros<float>({num_filters, filter_size, filter_size, input_size[2]});
-    grad_biases = xt::zeros<float>({num_filters});
+    grad_weights = xt::zeros_like(weights);
+    grad_biases = xt::zeros_like(biases);
+
+    m_weights = xt::zeros_like(weights);
+    m_biases = xt::zeros_like(biases);
+
+    v_weights = xt::zeros_like(weights);
+    v_biases = xt::zeros_like(biases);
+
+    timestep = 0;
 
     activation_id = p_activation_id;
 
@@ -124,6 +132,9 @@ xt::xarray<float> Convolution::backprop(const xt::xarray<float>& delta, bool cal
         }
     }
 
+    grad_weights /= batch_size;
+    grad_biases /= batch_size;
+
     return next_delta;
 }
 
@@ -133,4 +144,11 @@ void Convolution::update(float lr) {
 
     grad_weights.fill(0);
     grad_biases.fill(0);
+}
+
+void Convolution::update_adam(float lr, float beta1, float beta2, float epsilon) {
+    timestep++;
+
+    update_adam_4d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, epsilon, timestep);
+    update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, epsilon, timestep);
 }

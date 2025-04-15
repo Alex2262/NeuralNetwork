@@ -16,11 +16,8 @@ private:
     std::vector<size_t> input_size;
     std::vector<size_t> output_size;
 
-    xt::xtensor<float, 2> embedding_matrix;
-    xt::xtensor<float, 2> positional_matrix;
-
-    xt::xtensor<float, 2> grad_embedding_matrix;
-    xt::xtensor<float, 2> grad_positional_matrix;
+    xt::xtensor<float, 2> embedding_matrix, grad_embedding_matrix, m_embedding_matrix, v_embedding_matrix;
+    xt::xtensor<float, 2> positional_matrix, grad_positional_matrix, m_positional_matrix, v_positional_matrix;
 
     xt::xtensor<float, 3> input_activation;  // {batch_size, seq_len, 2} -- 2 carries vocab id and position
     xt::xtensor<float, 3> outputs;  // {batch_size, seq_len, d_model}
@@ -31,6 +28,7 @@ public:
     xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) override;
     xt::xarray<float> backprop(const xt::xarray<float>& delta, bool calc_delta_activation) override;
     void update(float lr) override;
+    void update_adam(float lr, float beta1, float beta2, float epsilon) override;
 
     [[nodiscard]] ActivationID get_activation_id() override { return ActivationID::NONE; }
     [[nodiscard]] xt::xarray<float> get_outputs() override { return outputs; }
@@ -39,7 +37,6 @@ public:
 
     // specific to embedding layer, to support projection layer
     [[nodiscard]] xt::xtensor<float, 2>& get_embedding_matrix() { return embedding_matrix; }
-    [[nodiscard]] xt::xtensor<float, 2>& get_grad_embedding_matrix() { return grad_embedding_matrix; }
     [[nodiscard]] size_t get_curr_seq_len() { return curr_seq_len; }
 };
 

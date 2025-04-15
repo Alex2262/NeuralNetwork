@@ -17,10 +17,8 @@ private:
 
     ActivationID activation_id;
 
-    xt::xtensor<float, 4> weights;
-    xt::xtensor<float, 1> biases;
-    xt::xtensor<float, 4> grad_weights;
-    xt::xtensor<float, 1> grad_biases;
+    xt::xtensor<float, 4> weights, grad_weights, m_weights, v_weights;
+    xt::xtensor<float, 1> biases, grad_biases, m_biases, v_biases;
 
     xt::xtensor<float, 4> input_activations;
     xt::xtensor<float, 4> activations;
@@ -36,6 +34,7 @@ public:
     xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) override;
     xt::xarray<float> backprop(const xt::xarray<float>& delta, bool calc_delta_activation) override;
     void update(float lr) override;
+    void update_adam(float lr, float beta1, float beta2, float epsilon) override;
 
     [[nodiscard]] ActivationID get_activation_id() override { return activation_id; }
     [[nodiscard]] xt::xarray<float> get_outputs() override { return outputs; }

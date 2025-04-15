@@ -16,8 +16,16 @@ Embedding::Embedding(const std::vector<size_t>& p_input_size, size_t p_vocab_siz
     embedding_matrix = xt::random::rand<float>({vocab_size, d_model}, -1.0, 1.0);
     positional_matrix = xt::random::rand<float>({max_seq_len, d_model}, -1.0, 1.0);
 
-    grad_embedding_matrix = xt::zeros<float>({vocab_size, d_model});
-    grad_positional_matrix = xt::zeros<float>({max_seq_len, d_model});
+    grad_embedding_matrix = xt::zeros_like(embedding_matrix);
+    grad_positional_matrix = xt::zeros_like(positional_matrix);
+
+    m_embedding_matrix = xt::zeros_like(embedding_matrix);
+    m_positional_matrix = xt::zeros_like(positional_matrix);
+
+    v_embedding_matrix = xt::zeros_like(embedding_matrix);
+    v_positional_matrix = xt::zeros_like(positional_matrix);
+
+    timestep = 0;
 }
 
 xt::xarray<float> Embedding::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
@@ -63,6 +71,9 @@ xt::xarray<float> Embedding::backprop(const xt::xarray<float>& delta, bool calc_
         }
     }
 
+    grad_embedding_matrix /= batch_size;
+    grad_positional_matrix /= batch_size;
+
     // we return an empty xarray here because we do not require any more backpropagation.
     return xt::zeros<float>({batch_size});
 }
@@ -73,4 +84,11 @@ void Embedding::update(float lr) {
 
     grad_embedding_matrix.fill(0);
     grad_positional_matrix.fill(0);
+}
+
+void Embedding::update_adam(float lr, float beta1, float beta2, float epsilon) {
+    timestep++;
+
+    update_adam_2d(embedding_matrix, grad_embedding_matrix, m_embedding_matrix, v_embedding_matrix, lr, beta1, beta2, epsilon, timestep);
+    update_adam_2d(positional_matrix, grad_positional_matrix, m_positional_matrix, v_positional_matrix, lr, beta1, beta2, epsilon, timestep);
 }
