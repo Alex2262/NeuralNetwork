@@ -1,0 +1,59 @@
+
+#ifndef NEURALNETWORK_ATTENTION_H
+#define NEURALNETWORK_ATTENTION_H
+
+
+#include "layers.h"
+#include "../types.h"
+
+// Masked Multi Head Attention Layer
+class Attention : public Layer {
+private:
+    size_t num_heads;
+    size_t d_model;
+    size_t d_k;
+    size_t max_seq_len;
+
+    std::vector<size_t> input_size;
+    std::vector<size_t> output_size;
+
+    xt::xtensor<float, 2> weights_q;
+    xt::xtensor<float, 2> weights_k;
+    xt::xtensor<float, 2> weights_v;
+    xt::xtensor<float, 2> weights_o;
+
+    xt::xtensor<float, 2> grad_weights_q;
+    xt::xtensor<float, 2> grad_weights_k;
+    xt::xtensor<float, 2> grad_weights_v;
+    xt::xtensor<float, 2> grad_weights_o;
+
+    std::vector<xt::xtensor<float, 2>> Qi;
+    std::vector<xt::xtensor<float, 2>> Ki;
+    std::vector<xt::xtensor<float, 2>> Vi;
+    std::vector<xt::xtensor<float, 2>> Ri;
+    std::vector<xt::xtensor<float, 2>> Ai;
+
+    xt::xtensor<float, 2> E;
+    xt::xtensor<float, 2> A;
+    xt::xtensor<float, 3> C;
+
+    xt::xtensor<float, 2> C_reshaped;
+
+    xt::xtensor<float, 3> input_activations;  // {batch_size, seq_len, d_model}
+    xt::xtensor<float, 2> outputs;  // {batch_size * seq_len, d_model}
+
+public:
+    Attention(const std::vector<size_t>& p_input_size, size_t p_num_heads, ActivationID p_activation_id);
+
+    xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) override;
+    xt::xarray<float> backprop(const xt::xarray<float>& delta, bool calc_delta_activation) override;
+    void update(float lr) override;
+
+    [[nodiscard]] ActivationID get_activation_id() override { return ActivationID::NONE; }
+    [[nodiscard]] xt::xarray<float> get_outputs() override { return outputs; }
+    [[nodiscard]] std::vector<size_t> get_input_size() const override { return input_size; }
+    [[nodiscard]] std::vector<size_t> get_output_size() const override { return output_size; }
+};
+
+
+#endif //NEURALNETWORK_ATTENTION_H

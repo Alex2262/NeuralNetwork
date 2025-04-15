@@ -1,0 +1,28 @@
+
+
+#ifndef NEURALNETWORK_MNIST_H
+#define NEURALNETWORK_MNIST_H
+
+#include <string>
+#include <xtensor/xarray.hpp>
+#include "../neural_network.h"
+
+void load_mnist_data(const std::string& file_path,
+                     std::vector<xt::xarray<float>>& train_images,
+                     std::vector<xt::xarray<float>>& train_labels,
+                     std::vector<xt::xarray<float>>& test_images,
+                     std::vector<xt::xarray<float>>& test_labels,
+                     float train_ratio);
+
+std::vector<xt::xarray<float>> get_3d(std::vector<xt::xarray<float>>& images);
+
+void show_image(const xt::xarray<float>& image);
+
+void show_images(NeuralNetwork& nn,
+                 std::vector<xt::xarray<float>>& train_images,
+                 std::vector<xt::xarray<float>>& train_labels);
+
+void test_mnist();
+void test_mnist_cnn();
+
+#endif //NEURALNETWORK_MNIST_H
