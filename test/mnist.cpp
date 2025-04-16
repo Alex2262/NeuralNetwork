@@ -130,7 +130,7 @@ void test_mnist() {
     nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
 
     // nn.SGD(train_images, train_labels, test_images, test_labels, 6, 64, 0.1);
-    nn.Adam(train_images, train_labels, test_images, test_labels, 10, 64, 0.001, 0.9, 0.999, 1e-8);
+    nn.Adam(train_images, train_labels, test_images, test_labels, 10, 64, 0.001, 0.9, 0.999, 1e-9);
     show_images(nn, train_images, train_labels);
 }
 
@@ -140,7 +140,7 @@ void test_mnist_cnn() {
     std::vector<xt::xarray<float>> test_images, test_labels;
 
     load_mnist_data("/Users/alexandertian/CLionProjects/NeuralNetwork/test/mnist-original.mat",
-                    train_images, train_labels, test_images, test_labels, 0.8, 20000);
+                    train_images, train_labels, test_images, test_labels, 0.8, 70000);
 
     train_images = get_3d(train_images);
     test_images = get_3d(test_images);
@@ -153,7 +153,7 @@ void test_mnist_cnn() {
     nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
 
     // nn.SGD(train_images, train_labels, test_images, test_labels, 10, 64, 0.02);
-    nn.Adam(train_images, train_labels, test_images, test_labels, 10, 64, 0.001, 0.9, 0.999, 1e-8);
+    nn.Adam(train_images, train_labels, test_images, test_labels, 15, 64, 0.001, 0.9, 0.999, 1e-9);
 }
 
 

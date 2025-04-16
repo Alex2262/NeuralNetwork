@@ -15,8 +15,9 @@ private:
     std::vector<std::unique_ptr<Layer>> layers;
 
 public:
-    NeuralNetwork(std::vector<size_t>& p_input_size, CostID p_cost_id);
+    NeuralNetwork(std::vector<size_t> p_input_size, CostID p_cost_id);
 
+    size_t get_num_layers() { return layers.size(); }
     Layer* get_layer(size_t index);
 
     xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode);

@@ -5,7 +5,7 @@
 #include <xtensor/xsort.hpp>
 #include "neural_network.h"
 
-NeuralNetwork::NeuralNetwork(std::vector<size_t>& p_input_size, CostID p_cost_id) {
+NeuralNetwork::NeuralNetwork(std::vector<size_t> p_input_size, CostID p_cost_id) {
     input_size = p_input_size;
     cost_id = p_cost_id;
 }

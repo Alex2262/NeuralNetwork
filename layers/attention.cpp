@@ -90,7 +90,7 @@ xt::xarray<float> Attention::feedforward(const xt::xarray<float>& inputs, bool e
 
     C_reshaped = xt::reshape_view(C, {batch_size * seq_len, num_heads * d_k});
 
-    outputs = xt::linalg::dot(C_reshaped, weights_o);
+    outputs = xt::reshape_view(xt::linalg::dot(C_reshaped, weights_o), {batch_size, seq_len, d_model});
 
     return outputs;
 }

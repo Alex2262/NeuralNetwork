@@ -35,7 +35,7 @@ private:
     xt::xtensor<float, 2> C_reshaped;
 
     xt::xtensor<float, 3> input_activations;  // {batch_size, seq_len, d_model}
-    xt::xtensor<float, 2> outputs;  // {batch_size * seq_len, d_model}
+    xt::xtensor<float, 3> outputs;  // {batch_size, seq_len, d_model}
 
 public:
     Attention(const std::vector<size_t>& p_input_size, size_t p_num_heads, ActivationID p_activation_id);
