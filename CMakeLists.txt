@@ -46,6 +46,8 @@ add_executable(NeuralNetwork main.cpp
         llm/core.h
         layers/res_add.cpp
         layers/res_add.h
+        layers/dropout.cpp
+        layers/dropout.h
 )
 
 target_link_libraries(NeuralNetwork

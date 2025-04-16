@@ -15,6 +15,7 @@
 #include "../layers/convolution.h"
 #include "../layers/flatten.h"
 #include "../layers/max_pool.h"
+#include "../layers/dropout.h"
 
 void load_mnist_data(const std::string& file_path,
                      std::vector<xt::xarray<float>>& train_images,
@@ -150,7 +151,12 @@ void test_mnist_cnn() {
     nn.add_layer<Convolution>(64, 5, 1, ActivationID::RELU);
     nn.add_layer<MaxPool>(2, 2);
     nn.add_layer<Flatten>();
+    nn.add_layer<Dense>(1024, ActivationID::RELU);
+    // nn.add_layer<Dropout>(0.25);
+    nn.add_layer<Dense>(256, ActivationID::RELU);
     nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
+
+    // 97.8% accuracy with Convolution(64, 5, 1 RELU) --> Maxpool(2, 2) --> Flatten --> Dense(256, RELU) --> Dense(10, SOFTMAX);
 
     // nn.SGD(train_images, train_labels, test_images, test_labels, 10, 64, 0.02);
     nn.Adam(train_images, train_labels, test_images, test_labels, 15, 64, 0.001, 0.9, 0.999, 1e-9);
