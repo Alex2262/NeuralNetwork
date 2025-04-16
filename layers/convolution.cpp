@@ -75,13 +75,13 @@ xt::xarray<float> Convolution::feedforward(const xt::xarray<float>& inputs, bool
     return activations;
 }
 
-xt::xarray<float> Convolution::backprop(const xt::xarray<float>& delta, bool calc_delta_activation) {
+xt::xarray<float> Convolution::backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) {
     size_t batch_size = input_activations.shape()[0];
 
-    xt::xtensor<float, 4> prop_delta = delta;
+    xt::xtensor<float, 4> delta = p_delta + res_delta;;
 
     if (calc_delta_activation) {
-        prop_delta = delta * activation_derivative(outputs);
+        delta = delta * activation_derivative(outputs);
     }
 
     for (size_t b = 0; b < batch_size; b++) {
@@ -89,7 +89,7 @@ xt::xarray<float> Convolution::backprop(const xt::xarray<float>& delta, bool cal
             for (size_t i = 0; i < output_size[0]; i++) {
                 for (size_t j = 0; j < output_size[1]; j++) {
 
-                    float delta_val = prop_delta(b, i, j, k);
+                    float delta_val = delta(b, i, j, k);
 
                     // compute element-wise products for weights gradient propagation
                     for (size_t fi = 0; fi < filter_size; fi++) {
@@ -102,7 +102,7 @@ xt::xarray<float> Convolution::backprop(const xt::xarray<float>& delta, bool cal
                         }
                     }
 
-                    grad_biases(k) += prop_delta(b, i, j, k);
+                    grad_biases(k) += delta(b, i, j, k);
                 }
             }
         }
@@ -115,7 +115,7 @@ xt::xarray<float> Convolution::backprop(const xt::xarray<float>& delta, bool cal
             for (size_t i = 0; i < output_size[0]; i++) {
                 for (size_t j = 0; j < output_size[1]; j++) {
 
-                    float delta_val = prop_delta(b, i, j, k);
+                    float delta_val = delta(b, i, j, k);
 
                     // back propagate delta values
                     for (size_t fi = 0; fi < filter_size; fi++) {

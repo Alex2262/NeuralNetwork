@@ -46,27 +46,27 @@ xt::xarray<float> Dense::feedforward(const xt::xarray<float>& inputs, bool evalu
     return activations;
 }
 
-xt::xarray<float> Dense::backprop(const xt::xarray<float>& delta, bool calc_delta_activation) {
+xt::xarray<float> Dense::backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) {
     size_t batch_size = input_activations.shape()[0];
 
-    xt::xtensor<float, 2> next_delta = delta;
+    xt::xtensor<float, 2> delta = p_delta + res_delta;
 
     if (calc_delta_activation) {
-        next_delta = delta * activation_derivative(outputs);
+        delta = delta * activation_derivative(outputs);
     }
 
     // x: (batch_size, input_size)
     // W: (output_size, input_size)
     // next_delta: (batch_size, output_size)
 
-    grad_weights += xt::linalg::dot(xt::transpose(next_delta), input_activations);
-    grad_biases += xt::sum(next_delta, {0});
+    grad_weights += xt::linalg::dot(xt::transpose(delta), input_activations);
+    grad_biases += xt::sum(delta, {0});
 
     grad_weights /= batch_size;
     grad_biases /= batch_size;
 
-    next_delta = xt::linalg::dot(next_delta, weights);
-    return next_delta;
+    delta = xt::linalg::dot(delta, weights);
+    return delta;
 }
 
 void Dense::update(float lr) {

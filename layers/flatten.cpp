@@ -17,7 +17,9 @@ xt::xarray<float> Flatten::feedforward(const xt::xarray<float>& inputs, bool eva
     return outputs;
 }
 
-xt::xarray<float> Flatten::backprop(const xt::xarray<float>& delta, bool calc_delta_activation) {
+xt::xarray<float> Flatten::backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) {
+    xt::xarray<float> delta = p_delta + res_delta;
+
     auto real_shape = input_size;
     real_shape.insert(real_shape.begin(), batch_size);
     return xt::reshape_view(delta, real_shape);

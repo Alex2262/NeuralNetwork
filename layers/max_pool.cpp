@@ -54,8 +54,10 @@ xt::xarray<float> MaxPool::feedforward(const xt::xarray<float>& inputs, bool eva
     return outputs;
 }
 
-xt::xarray<float> MaxPool::backprop(const xt::xarray<float>& delta, bool calc_delta_activation) {
+xt::xarray<float> MaxPool::backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) {
     size_t batch_size = input_activations.shape()[0];
+
+    xt::xtensor<float, 4> delta = p_delta + res_delta;
     xt::xtensor<float, 4> next_delta = xt::zeros<float>({batch_size, input_size[0], input_size[1], input_size[2]});
 
     for (size_t b = 0; b < batch_size; b++) {

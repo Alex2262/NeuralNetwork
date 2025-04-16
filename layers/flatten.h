@@ -18,13 +18,14 @@ public:
     explicit Flatten(const std::vector<size_t>& p_input_size);
 
     xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) override;
-    xt::xarray<float> backprop(const xt::xarray<float>& delta, bool calc_delta_activation) override;
+    xt::xarray<float> backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) override;
 
     void update(float lr) override {};
     void update_adam(float lr, float beta1, float beta2, float epsilon) override {};
 
     [[nodiscard]] ActivationID get_activation_id() override { return ActivationID::NONE; }
     [[nodiscard]] xt::xarray<float> get_outputs() override { return outputs; }
+    [[nodiscard]] xt::xarray<float> get_activations() override { return outputs; }
     [[nodiscard]] std::vector<size_t> get_input_size() const override { return input_size; }
     [[nodiscard]] std::vector<size_t> get_output_size() const override { return output_size; }
 };

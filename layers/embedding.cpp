@@ -54,7 +54,9 @@ xt::xarray<float> Embedding::feedforward(const xt::xarray<float>& inputs, bool e
     return outputs;
 }
 
-xt::xarray<float> Embedding::backprop(const xt::xarray<float>& delta, bool calc_delta_activation) {
+xt::xarray<float> Embedding::backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) {
+    xt::xtensor<float, 3> delta = p_delta + res_delta;
+
     size_t batch_size = input_activation.shape()[0];
     size_t seq_len = input_activation.shape()[1];
 

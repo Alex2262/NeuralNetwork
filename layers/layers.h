@@ -13,6 +13,9 @@
 class Layer {
 public:
     size_t timestep = 0;
+    xt::xarray<float> res_delta = 0;
+
+    void set_res_delta(const xt::xarray<float>& delta) { res_delta = delta; };
 
     virtual ~Layer() = default;
 
@@ -21,8 +24,9 @@ public:
 
     virtual ActivationID get_activation_id() = 0;
     virtual xt::xarray<float> get_outputs() = 0;
+    virtual xt::xarray<float> get_activations() = 0;
     virtual xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) = 0;
-    virtual xt::xarray<float> backprop(const xt::xarray<float>& delta, bool calc_delta_activation) = 0;
+    virtual xt::xarray<float> backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) = 0;
     virtual void update(float lr) = 0;
     virtual void update_adam(float lr, float beta1, float beta2, float epsilon) = 0;
 };

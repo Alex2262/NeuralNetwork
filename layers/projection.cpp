@@ -42,8 +42,10 @@ xt::xarray<float> Projection::feedforward(const xt::xarray<float>& inputs, bool 
     return activations;
 }
 
-xt::xarray<float> Projection::backprop(const xt::xarray<float>& delta, bool calc_delta_activation) {
+xt::xarray<float> Projection::backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) {
     assert(!calc_delta_activation);
+
+    xt::xtensor<float, 2> delta = p_delta + res_delta;
 
     // note this is unnecessary for the projection layer since it's the last layer.
     // xt::xtensor<float, 2> next_delta = delta;

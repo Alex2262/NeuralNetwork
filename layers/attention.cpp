@@ -90,21 +90,21 @@ xt::xarray<float> Attention::feedforward(const xt::xarray<float>& inputs, bool e
 
     C_reshaped = xt::reshape_view(C, {batch_size * seq_len, num_heads * d_k});
 
-    xt::xtensor<float, 2> O = xt::linalg::dot(C_reshaped, weights_o);
+    outputs = xt::linalg::dot(C_reshaped, weights_o);
 
-    outputs = E + O;
     return outputs;
 }
 
-xt::xarray<float> Attention::backprop(const xt::xarray<float>& delta, bool calc_delta_activation) {
+xt::xarray<float> Attention::backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) {
+    xt::xtensor<float, 2> delta = p_delta + res_delta;
+
     size_t batch_size = input_activations.shape()[0];
     size_t seq_len = input_activations.shape()[1];
 
-    xt::xtensor<float, 2> delta_O = delta;
-    xt::xtensor<float, 2> delta_C = xt::linalg::dot(delta_O, xt::transpose(weights_o));
+    xt::xtensor<float, 2> delta_C = xt::linalg::dot(delta, xt::transpose(weights_o));
     xt::xtensor<float, 3> delta_C_reshaped = xt::reshape_view(delta_C, {batch_size * num_heads, seq_len, d_k});
 
-    grad_weights_o += xt::linalg::dot(xt::transpose(C_reshaped), delta_O);
+    grad_weights_o += xt::linalg::dot(xt::transpose(C_reshaped), delta);
 
     xt::xtensor<float, 3> delta_Q = xt::zeros<float>({batch_size * num_heads, seq_len, d_k});
     xt::xtensor<float, 3> delta_K = xt::zeros<float>({batch_size * num_heads, seq_len, d_k});
@@ -140,8 +140,7 @@ xt::xarray<float> Attention::backprop(const xt::xarray<float>& delta, bool calc_
 
     xt::xtensor<float, 2> delta_E = xt::linalg::dot(delta_Q, xt::transpose(weights_q)) +
                                     xt::linalg::dot(delta_K, xt::transpose(weights_k)) +
-                                    xt::linalg::dot(delta_V, xt::transpose(weights_v)) +
-                                    delta;
+                                    xt::linalg::dot(delta_V, xt::transpose(weights_v));
 
     grad_weights_q /= batch_size;
     grad_weights_k /= batch_size;
