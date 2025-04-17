@@ -4,6 +4,14 @@
 #include <xtensor/xview.hpp>
 #include "utilities.h"
 
+xt::xarray<float> no_activation(const xt::xarray<float>& x) {
+    return x;
+}
+
+xt::xarray<float> no_activation_derivative(const xt::xarray<float>& x) {
+    return xt::ones_like(x);
+}
+
 xt::xarray<float> ReLU(const xt::xarray<float>& x) {
     return xt::maximum(x, 0.0);
 }
@@ -58,7 +66,7 @@ ActivationFunction get_activation_function(ActivationID activation_id) {
         case ActivationID::RELU: return ReLU;
         case ActivationID::SIGMOID: return sigmoid;
         case ActivationID::SOFTMAX: return softmax;
-        default: return nullptr;
+        default: return no_activation;
     }
 }
 
@@ -66,7 +74,8 @@ ActivationDerivative get_activation_derivative(ActivationID activation_id) {
     switch (activation_id) {
         case ActivationID::RELU: return ReLU_derivative;
         case ActivationID::SIGMOID: return sigmoid_derivative;
-        default: return nullptr;  // softmax derivative handled differently
+        case ActivationID::SOFTMAX: return nullptr; // softmax derivative handled differently
+        default: return no_activation_derivative;
     }
 }
 

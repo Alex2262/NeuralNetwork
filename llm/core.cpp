@@ -8,6 +8,7 @@
 #include "../layers/dense.h"
 #include "../layers/embedding.h"
 #include "../layers/flatten.h"
+#include "../layers/normalize.h"
 #include "../layers/projection.h"
 #include "../layers/res_add.h"
 
@@ -28,16 +29,21 @@ LLM::LLM(size_t p_num_heads, size_t p_num_layers, size_t p_max_seq_len, size_t p
     auto* embedding_layer = dynamic_cast<Embedding*>(nn.get_layer(0));
 
     for (size_t layer = 0; layer < num_layers; layer++) {
-        Layer* prev_layer = nn.get_layer(nn.get_num_layers() - 1);
+        Layer* prev_out = nn.get_layer(nn.get_num_layers() - 1);
+
+        nn.add_layer<Normalize>();
         nn.add_layer<Attention>(num_heads, ActivationID::NONE);
-        nn.add_layer<ResAdd>(prev_layer);
-        Layer* res_layer_1 = nn.get_layer(nn.get_num_layers() - 1);
+        nn.add_layer<ResAdd>(prev_out);
 
+        Layer* res_out_1 = nn.get_layer(nn.get_num_layers() - 1);
+
+        nn.add_layer<Normalize>();
         nn.add_layer<Dense>(dense_neurons, ActivationID::RELU);
-        nn.add_layer<Dense>(d_model, ActivationID::RELU);
+        nn.add_layer<Dense>(d_model, ActivationID::NONE);  // linear transformation back to D, no activation
 
-        nn.add_layer<ResAdd>(res_layer_1);
+        nn.add_layer<ResAdd>(res_out_1);
     }
 
-    nn.add_layer<Projection>(embedding_layer, ActivationID::NONE);
+    nn.add_layer<Normalize>();
+    nn.add_layer<Projection>(embedding_layer, ActivationID::SOFTMAX);
 }

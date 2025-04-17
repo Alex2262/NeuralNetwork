@@ -48,6 +48,10 @@ add_executable(NeuralNetwork main.cpp
         layers/res_add.h
         layers/dropout.cpp
         layers/dropout.h
+        layers/normalize.cpp
+        layers/normalize.h
+        layers/activation.cpp
+        layers/activation.h
 )
 
 target_link_libraries(NeuralNetwork

@@ -11,11 +11,14 @@
 #include "matio.h"
 #include "mnist.h"
 
+#include "../layers/activation.h"
 #include "../layers/dense.h"
 #include "../layers/convolution.h"
 #include "../layers/flatten.h"
 #include "../layers/max_pool.h"
+#include "../layers/normalize.h"
 #include "../layers/dropout.h"
+#include "../layers/res_add.h"
 
 void load_mnist_data(const std::string& file_path,
                      std::vector<xt::xarray<float>>& train_images,
@@ -125,10 +128,41 @@ void test_mnist() {
     load_mnist_data("/Users/alexandertian/CLionProjects/NeuralNetwork/test/mnist-original.mat",
                     train_images, train_labels, test_images, test_labels, 0.8, 70000);
 
+    // ~96.7% accuracy
     std::vector<size_t> input_size = {784};
     NeuralNetwork nn(input_size, CostID::CEL);
-    nn.add_layer<Dense>(128, ActivationID::RELU);
+
+
+    nn.add_layer<Dense>(256, ActivationID::NONE);
+    nn.add_layer<Normalize>();
+    nn.add_layer<Activation>(ActivationID::RELU);
     nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
+
+
+    /*
+    nn.add_layer<Activation>(ActivationID::NONE);
+    Layer* layer1 = nn.get_layer(nn.get_num_layers() - 1);
+
+    nn.add_layer<Dense>(784, ActivationID::NONE);
+    nn.add_layer<Normalize>();
+    nn.add_layer<Activation>(ActivationID::RELU);
+    Layer* layer2 = nn.get_layer(nn.get_num_layers() - 1);
+
+    nn.add_layer<ResAdd>(layer1);
+
+    nn.add_layer<Dense>(784, ActivationID::NONE);
+    nn.add_layer<Normalize>();
+    nn.add_layer<Activation>(ActivationID::RELU);
+
+    nn.add_layer<ResAdd>(layer1);
+    nn.add_layer<ResAdd>(layer2);
+
+    nn.add_layer<Dense>(256, ActivationID::NONE);
+    nn.add_layer<Normalize>();
+    nn.add_layer<Activation>(ActivationID::RELU);
+
+    nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
+     */
 
     // nn.SGD(train_images, train_labels, test_images, test_labels, 6, 64, 0.1);
     nn.Adam(train_images, train_labels, test_images, test_labels, 10, 64, 0.001, 0.9, 0.999, 1e-9);
@@ -148,6 +182,8 @@ void test_mnist_cnn() {
 
     std::vector<size_t> input_size = {28, 28, 1};
     NeuralNetwork nn(input_size, CostID::CEL);
+
+    /*
     nn.add_layer<Convolution>(64, 5, 1, ActivationID::RELU);
     nn.add_layer<MaxPool>(2, 2);
     nn.add_layer<Flatten>();
@@ -155,6 +191,17 @@ void test_mnist_cnn() {
     // nn.add_layer<Dropout>(0.25);
     nn.add_layer<Dense>(256, ActivationID::RELU);
     nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
+     */
+
+    /*
+    nn.add_layer<Convolution>(64, 5, 1, ActivationID::RELU);
+    nn.add_layer<MaxPool>(2, 2);
+    nn.add_layer<Flatten>();
+    nn.add_layer<Dense>(256, ActivationID::NONE);
+    nn.add_layer<Normalize>();
+    nn.add_layer<Activation>(ActivationID::RELU);
+    nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
+     */
 
     // 97.8% accuracy with Convolution(64, 5, 1 RELU) --> Maxpool(2, 2) --> Flatten --> Dense(256, RELU) --> Dense(10, SOFTMAX);
 

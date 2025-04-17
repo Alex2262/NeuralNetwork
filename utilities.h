@@ -2,10 +2,15 @@
 #ifndef NEURALNETWORK_UTILITIES_H
 #define NEURALNETWORK_UTILITIES_H
 
+#include <numeric>
+#include <functional>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xsort.hpp>
 #include <xtensor/xtensor.hpp>
 #include "types.h"
+
+xt::xarray<float> no_activation(const xt::xarray<float>& x);
+xt::xarray<float> no_activation_derivative(const xt::xarray<float>& x);
 
 xt::xarray<float> ReLU(const xt::xarray<float>& x);
 xt::xarray<float> ReLU_derivative(const xt::xarray<float>& x);
@@ -74,5 +79,16 @@ std::vector<size_t> unravel_index(size_t flat_index, const Shape& shape) {
     return indices;
 }
 
+template <typename Iterable>
+auto prod(const Iterable& container, size_t start, size_t end) {
+    using ValueType = std::decay_t<decltype(*std::begin(container))>;
+
+    auto it_start = std::begin(container);
+    std::advance(it_start, start);
+    auto it_end = std::begin(container);
+    std::advance(it_end, end + 1);
+
+    return std::accumulate(it_start, it_end, static_cast<ValueType>(1), std::multiplies<ValueType>());
+}
 
 #endif //NEURALNETWORK_UTILITIES_H

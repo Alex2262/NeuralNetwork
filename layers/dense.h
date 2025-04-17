@@ -5,8 +5,22 @@
 #include "layers.h"
 #include "../types.h"
 
+
+/*
+ * Standard dense layer, but if the input received has more than 2 dimensions,
+ * we flatten the leading dimensions and process as such, and output back in the original dimensionality
+ */
+
 class Dense : public Layer {
 private:
+    size_t inp_neurons;
+    size_t out_neurons;
+    size_t batch_size = 1;
+    size_t extra_dim_prod;
+
+    std::vector<size_t> input_shape;
+    std::vector<size_t> output_shape;
+
     std::vector<size_t> input_size;
     std::vector<size_t> output_size;
     ActivationID activation_id;

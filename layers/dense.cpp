@@ -7,11 +7,14 @@
 
 
 Dense::Dense(const std::vector<std::size_t>& p_input_size, size_t p_num_neurons, ActivationID p_activation_id) {
-    input_size = {p_input_size.back()};
-    output_size = {p_num_neurons};
+    inp_neurons = p_input_size.back();
+    out_neurons = p_num_neurons;
 
-    weights = xt::random::rand<float>({p_num_neurons, input_size[0]}, -1.0, 1.0);
-    biases = xt::random::rand<float>({p_num_neurons}, -1.0, 1.0);
+    input_size = {inp_neurons};
+    output_size = {out_neurons};
+
+    weights = xt::random::rand<float>({out_neurons, inp_neurons}, -1.0, 1.0);
+    biases = xt::random::rand<float>({out_neurons}, -1.0, 1.0);
 
     grad_weights = xt::zeros_like(weights);
     grad_biases = xt::zeros_like(biases);
@@ -28,40 +31,43 @@ Dense::Dense(const std::vector<std::size_t>& p_input_size, size_t p_num_neurons,
 
     activation_function = get_activation_function(activation_id);
     activation_derivative = get_activation_derivative(activation_id);
+
+    extra_dim_prod = prod(p_input_size, 0, p_input_size.size() - 2);
+    input_shape = p_input_size;
+    input_shape.insert(input_shape.begin(), 1);
+    output_shape = input_shape;
+    output_shape[output_shape.size() - 1] = out_neurons;
 }
 
 xt::xarray<float> Dense::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
-    assert(inputs.shape().back() == input_size[0]);
-    input_activations = inputs;
+    assert(inputs.shape().back() == inp_neurons);
 
-    // ensure inputs are in shape {batch_size, x}
-    auto input_shape = input_activations.shape();
-    size_t batch_size = 1;
-    for (size_t i = 0; i < input_shape.size() - 1; i++) batch_size *= input_shape[i];
-    xt::xtensor<float, 2> inputs_reshaped = xt::reshape_view(inputs, {batch_size, input_shape.back()});
+    size_t real_batch_size = inputs.shape()[0];
+    batch_size = real_batch_size * extra_dim_prod;
+    input_shape[0] = real_batch_size;
+    output_shape[0] = real_batch_size;
+
+    // ensure inputs are in shape {batch_size, inp_neurons}
+    input_activations = xt::reshape_view(inputs, {batch_size, inp_neurons});
 
     // actual dense layer feedforward
-    outputs = xt::linalg::dot(inputs_reshaped, xt::transpose(weights)) + biases;
+    outputs = xt::linalg::dot(input_activations, xt::transpose(weights)) + biases;
     activations = activation_function(outputs);
 
-    // transform input back
-    input_shape[input_shape.size() - 1] = output_size[0];
-    return xt::reshape_view(activations, input_shape);
+    return xt::reshape_view(activations, output_shape);
 }
 
 xt::xarray<float> Dense::backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) {
-    // ensure inputs and delta are in shape {batch_size, x}
-    auto input_shape = input_activations.shape();
-    size_t batch_size = 1;
-    for (size_t i = 0; i < input_shape.size() - 1; i++) batch_size *= input_shape[i];
-    xt::xtensor<float, 2> inputs_reshaped = xt::reshape_view(input_activations, {batch_size, input_shape.back()});
-    xt::xtensor<float, 2> delta = xt::reshape_view(xt::eval(p_delta + res_delta), {batch_size, output_size[0]});
+    assert(p_delta.shape().back() == out_neurons);
+
+    // ensure delta is in shape {batch_size, out_neurons}
+    xt::xtensor<float, 2> delta = xt::reshape_view(xt::eval(p_delta + res_delta), {batch_size, out_neurons});
 
     if (calc_delta_activation) {
         delta = delta * activation_derivative(outputs);
     }
 
-    grad_weights += xt::linalg::dot(xt::transpose(delta), inputs_reshaped);
+    grad_weights += xt::linalg::dot(xt::transpose(delta), input_activations);
     grad_biases += xt::sum(delta, {0});
 
     grad_weights /= batch_size;
