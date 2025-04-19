@@ -60,6 +60,8 @@ void print_shape(const Shape& shape) {
     std::cout << s << std::endl;
 }
 
+void print_2d(xt::xtensor<float, 2>& inp);
+
 
 template <typename Shape>
 std::vector<size_t> unravel_index(size_t flat_index, const Shape& shape) {

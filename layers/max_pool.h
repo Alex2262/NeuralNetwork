@@ -12,6 +12,7 @@
 class MaxPool : public Layer {
 
 private:
+    std::string name = "Max Pool";
     std::vector<size_t> input_size;
     std::vector<size_t> output_size;
 
@@ -28,6 +29,7 @@ public:
     xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) override;
     xt::xarray<float> backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) override;
 
+    std::string get_name() const override { return "Max Pooling"; }
     void update(float lr) override {};
     void update_adam(float lr, float beta1, float beta2, float epsilon) override {};
 

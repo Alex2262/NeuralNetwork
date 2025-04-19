@@ -44,23 +44,20 @@ Attention::Attention(const std::vector<size_t>& p_input_size, size_t p_num_heads
 }
 
 xt::xarray<float> Attention::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
-    input_activations = inputs;
+    size_t seq_len = max_seq_len;
+    size_t batch_size = inputs.shape()[0] / seq_len;
 
-    size_t batch_size = input_activations.shape()[0];
-    size_t seq_len = inputs.shape()[1];
-
-    E = xt::reshape_view(inputs, {batch_size * seq_len, d_model});
+    E = inputs;
 
     xt::xtensor<float, 3> Q = xt::reshape_view(xt::linalg::dot(E, weights_q), {batch_size * num_heads, seq_len, d_k});
     xt::xtensor<float, 3> K = xt::reshape_view(xt::linalg::dot(E, weights_k), {batch_size * num_heads, seq_len, d_k});
     xt::xtensor<float, 3> V = xt::reshape_view(xt::linalg::dot(E, weights_v), {batch_size * num_heads, seq_len, d_k});
 
-
     xt::xtensor<float, 2> mask = xt::zeros<float>({seq_len, seq_len});
 
     for (size_t i = 0; i < seq_len; i++) {
         for (size_t j = i + 1; j < seq_len; j++) {
-            mask(i, j) = -std::numeric_limits<float>::infinity();
+            mask(i, j) = -1e9f;
         }
     }
 
@@ -90,7 +87,7 @@ xt::xarray<float> Attention::feedforward(const xt::xarray<float>& inputs, bool e
 
     C_reshaped = xt::reshape_view(C, {batch_size * seq_len, num_heads * d_k});
 
-    outputs = xt::reshape_view(xt::linalg::dot(C_reshaped, weights_o), {batch_size, seq_len, d_model});
+    outputs = xt::linalg::dot(C_reshaped, weights_o);
 
     return outputs;
 }
@@ -98,8 +95,8 @@ xt::xarray<float> Attention::feedforward(const xt::xarray<float>& inputs, bool e
 xt::xarray<float> Attention::backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) {
     xt::xtensor<float, 2> delta = p_delta + res_delta;
 
-    size_t batch_size = input_activations.shape()[0];
-    size_t seq_len = input_activations.shape()[1];
+    size_t seq_len = max_seq_len;
+    size_t batch_size = E.shape()[0] / seq_len;
 
     xt::xtensor<float, 2> delta_C = xt::linalg::dot(delta, xt::transpose(weights_o));
     xt::xtensor<float, 3> delta_C_reshaped = xt::reshape_view(delta_C, {batch_size * num_heads, seq_len, d_k});
@@ -133,21 +130,26 @@ xt::xarray<float> Attention::backprop(const xt::xarray<float>& p_delta, bool cal
         }
     }
 
+    xt::xtensor<float, 2> delta_Q_reshaped = xt::reshape_view(delta_Q, {batch_size * seq_len, num_heads * d_k});
+    xt::xtensor<float, 2> delta_K_reshaped = xt::reshape_view(delta_K, {batch_size * seq_len, num_heads * d_k});
+    xt::xtensor<float, 2> delta_V_reshaped = xt::reshape_view(delta_V, {batch_size * seq_len, num_heads * d_k});
+
     xt::xtensor<float, 2> E_T = xt::transpose(E);
-    grad_weights_q += xt::linalg::dot(E_T, delta_Q);
-    grad_weights_k += xt::linalg::dot(E_T, delta_K);
-    grad_weights_v += xt::linalg::dot(E_T, delta_V);
+    grad_weights_q += xt::linalg::dot(E_T, delta_Q_reshaped);
+    grad_weights_k += xt::linalg::dot(E_T, delta_K_reshaped);
+    grad_weights_v += xt::linalg::dot(E_T, delta_V_reshaped);
 
-    xt::xtensor<float, 2> delta_E = xt::linalg::dot(delta_Q, xt::transpose(weights_q)) +
-                                    xt::linalg::dot(delta_K, xt::transpose(weights_k)) +
-                                    xt::linalg::dot(delta_V, xt::transpose(weights_v));
+    xt::xtensor<float, 2> delta_E = xt::linalg::dot(delta_Q_reshaped, xt::transpose(weights_q)) +
+                                    xt::linalg::dot(delta_K_reshaped, xt::transpose(weights_k)) +
+                                    xt::linalg::dot(delta_V_reshaped, xt::transpose(weights_v));
 
-    grad_weights_q /= batch_size;
-    grad_weights_k /= batch_size;
-    grad_weights_v /= batch_size;
-    grad_weights_o /= batch_size;
+    auto div = static_cast<float>(batch_size * seq_len);
+    grad_weights_q /= div;
+    grad_weights_k /= div;
+    grad_weights_v /= div;
+    grad_weights_o /= div;
 
-    return xt::reshape_view(delta_E, {batch_size, seq_len, d_model});
+    return delta_E;
 }
 
 void Attention::update(float lr) {

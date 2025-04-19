@@ -34,14 +34,15 @@ private:
 
     xt::xtensor<float, 2> C_reshaped;
 
-    xt::xtensor<float, 3> input_activations;  // {batch_size, seq_len, d_model}
-    xt::xtensor<float, 3> outputs;  // {batch_size, seq_len, d_model}
+    xt::xtensor<float, 2> outputs;  // {batch_size * seq_len, d_model}
 
 public:
     Attention(const std::vector<size_t>& p_input_size, size_t p_num_heads, ActivationID p_activation_id);
 
     xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) override;
     xt::xarray<float> backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) override;
+
+    std::string get_name() const override { return "Attention"; }
     void update(float lr) override;
     void update_adam(float lr, float beta1, float beta2, float epsilon) override;
 

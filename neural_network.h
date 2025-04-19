@@ -33,6 +33,7 @@ public:
                      float lr, float beta1, float beta2, float epsilon);
 
     float evaluate(const xt::xarray<float>& inputs, const xt::xarray<float>& labels);
+    float loss(const xt::xarray<float>& inputs, const xt::xarray<float>& labels);
 
     void SGD(const std::vector<xt::xarray<float>>& training_inputs,
              const std::vector<xt::xarray<float>>& training_labels,
@@ -60,7 +61,7 @@ public:
         for (int i = 1; i < prev_output_size.size(); i++) f_input_size += ", " + std::to_string(prev_output_size[i]);
         for (int i = 1; i < output_size.size(); i++) f_output_size += ", " + std::to_string(output_size[i]);
 
-        std::cout << "Added Layer with input size (" << f_input_size
+        std::cout << "Added " << layers.back()->get_name() << " Layer with input size (" << f_input_size
                   << ") and output size (" << f_output_size << ")" << std::endl;
     }
 };

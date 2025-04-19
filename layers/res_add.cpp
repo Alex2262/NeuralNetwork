@@ -1,6 +1,6 @@
 
 #include "res_add.h"
-
+#include "../utilities.h"
 
 
 ResAdd::ResAdd(const std::vector<size_t>& p_input_size, Layer* p_res_layer) {

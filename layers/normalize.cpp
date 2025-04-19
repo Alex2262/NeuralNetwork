@@ -13,8 +13,8 @@ Normalize::Normalize(const std::vector<size_t>& p_input_size) {
 
     feature_size = input_size.back();
 
-    gamma = xt::ones<float>({input_size.back()});
-    beta = xt::zeros<float>({input_size.back()});
+    gamma = xt::ones<float>({feature_size});
+    beta = xt::zeros<float>({feature_size});
 
     grad_gamma = xt::zeros_like(gamma);
     grad_beta = xt::zeros_like(beta);
@@ -26,20 +26,14 @@ Normalize::Normalize(const std::vector<size_t>& p_input_size) {
     v_beta = xt::zeros_like(beta);
 
     timestep = 0;
-
-    extra_dim_prod = prod(p_input_size, 0, p_input_size.size() - 2);
-    input_shape = p_input_size;
-    input_shape.insert(input_shape.begin(), 1);
 }
 
 xt::xarray<float> Normalize::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
     assert(inputs.shape().back() == feature_size);
 
-    size_t real_batch_size = inputs.shape()[0];
-    batch_size = real_batch_size * extra_dim_prod;
-    input_shape[0] = real_batch_size;
+    input_activations = inputs;
+    size_t batch_size = input_activations.shape()[0];
 
-    input_activations = xt::reshape_view(inputs, {batch_size, feature_size});
     mean = xt::reshape_view(xt::sum(input_activations, {1}) / static_cast<float>(feature_size), std::vector<size_t>{batch_size, 1});
 
     xmu = input_activations - mean;
@@ -50,13 +44,14 @@ xt::xarray<float> Normalize::feedforward(const xt::xarray<float>& inputs, bool e
 
     outputs = normalized * gamma + beta;
 
-    return xt::reshape_view(outputs, input_shape);
+    return outputs;
 }
 
 xt::xarray<float> Normalize::backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) {
     assert(p_delta.shape().back() == feature_size);
 
-    xt::xtensor<float, 2> delta = xt::reshape_view(xt::eval(p_delta + res_delta), {batch_size, feature_size});
+    size_t batch_size = input_activations.shape()[0];
+    xt::xtensor<float, 2> delta = p_delta + res_delta;
 
     grad_gamma += xt::sum(delta * normalized, {0});
     grad_beta += xt::sum(delta, {0});

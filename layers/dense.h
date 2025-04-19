@@ -15,11 +15,6 @@ class Dense : public Layer {
 private:
     size_t inp_neurons;
     size_t out_neurons;
-    size_t batch_size = 1;
-    size_t extra_dim_prod;
-
-    std::vector<size_t> input_shape;
-    std::vector<size_t> output_shape;
 
     std::vector<size_t> input_size;
     std::vector<size_t> output_size;
@@ -40,6 +35,8 @@ public:
 
     xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) override;
     xt::xarray<float> backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) override;
+
+    std::string get_name() const override { return "Dense"; }
     void update(float lr) override;
     void update_adam(float lr, float beta1, float beta2, float epsilon) override;
 

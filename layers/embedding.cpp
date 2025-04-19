@@ -33,48 +33,44 @@ xt::xarray<float> Embedding::feedforward(const xt::xarray<float>& inputs, bool e
     size_t batch_size = input_activation.shape()[0];
     size_t seq_len = input_activation.shape()[1];
 
-    curr_seq_len = seq_len;
-
     xt::xtensor<float, 3> token_embeds = xt::zeros<float>({batch_size, seq_len, d_model});
     xt::xtensor<float, 3> position_embeds = xt::zeros<float>({batch_size, seq_len, d_model});
 
     for (size_t b = 0; b < batch_size; b++) {
         for (size_t i = 0; i < seq_len; i++) {
-            auto token_idx = static_cast<size_t>(input_activation(b, i, 0));
-            auto position_idx = static_cast<size_t>(input_activation(b, i, 1));
+            auto token_idx = static_cast<size_t>(input_activation(b, i));
 
             for (size_t d = 0; d < d_model; d++) {
                 token_embeds(b, i, d) = embedding_matrix(token_idx, d);
-                position_embeds(b, i, d) = positional_matrix(position_idx, d);
+                position_embeds(b, i, d) = positional_matrix(i, d);
             }
         }
     }
 
-    outputs = token_embeds + position_embeds;
+    outputs = xt::reshape_view(xt::eval(token_embeds + position_embeds), {batch_size * seq_len, d_model});
     return outputs;
 }
 
 xt::xarray<float> Embedding::backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) {
-    xt::xtensor<float, 3> delta = p_delta + res_delta;
-
     size_t batch_size = input_activation.shape()[0];
     size_t seq_len = input_activation.shape()[1];
+    xt::xtensor<float, 3> delta = xt::reshape_view(xt::eval(p_delta + res_delta), {batch_size, seq_len, d_model});
 
     for (size_t b = 0; b < batch_size; b++) {
         for (size_t i = 0; i < seq_len; i++) {
-            auto token_idx = static_cast<size_t>(input_activation(b, i, 0));
-            auto position_idx = static_cast<size_t>(input_activation(b, i, 1));
+            auto token_idx = static_cast<size_t>(input_activation(b, i));
 
             for (size_t d = 0; d < d_model; d++) {
                 float delta_val = delta(b, i, d);
                 grad_embedding_matrix(token_idx, d) += delta_val;
-                grad_positional_matrix(position_idx, d) += delta_val;
+                grad_positional_matrix(i, d) += delta_val;
             }
         }
     }
 
-    grad_embedding_matrix /= batch_size;
-    grad_positional_matrix /= batch_size;
+    auto div = static_cast<float>(batch_size * seq_len);
+    grad_embedding_matrix /= div;
+    grad_positional_matrix /= div;
 
     // we return an empty xarray here because we do not require any more backpropagation.
     return xt::zeros<float>({batch_size});

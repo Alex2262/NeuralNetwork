@@ -73,6 +73,13 @@ float NeuralNetwork::evaluate(const xt::xarray<float>& inputs, const xt::xarray<
     return static_cast<float>(correct) / static_cast<float>(batch_size);
 }
 
+
+float NeuralNetwork::loss(const xt::xarray<float>& inputs, const xt::xarray<float>& labels) {
+    auto cost_function = get_cost_function(cost_id);
+    xt::xarray<float> activations = feedforward(inputs, true);
+    return cost_function(activations, labels);
+}
+
 void NeuralNetwork::SGD(const std::vector<xt::xarray<float>>& training_inputs,
                         const std::vector<xt::xarray<float>>& training_labels,
                         const std::vector<xt::xarray<float>>& test_inputs,
@@ -190,7 +197,7 @@ void NeuralNetwork::Adam(const std::vector<xt::xarray<float>>& training_inputs,
 
             float avg_time_per_batch = static_cast<float>(elapsed_time) / static_cast<float>(batch_index + 1);
             int remaining_batches = static_cast<int>(num_batches - (batch_index + 1));
-            int estimated_remaining_time = remaining_batches * static_cast<int>(avg_time_per_batch);
+            int estimated_remaining_time = static_cast<int>(static_cast<float>(remaining_batches) * avg_time_per_batch);
 
             int minutes = estimated_remaining_time / 60;
             int seconds = estimated_remaining_time % 60;

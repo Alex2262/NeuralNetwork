@@ -151,6 +151,7 @@ void set_3d(xt::xtensor<float, 3>& inputs, xt::xtensor<float, 2>& value, size_t 
 void update_adam_1d(xt::xtensor<float, 1>& weights, xt::xtensor<float, 1>& grad_weights,
                     xt::xtensor<float, 1>& m_weights, xt::xtensor<float, 1>& v_weights,
                     float lr, float beta1, float beta2, float epsilon, size_t timestep) {
+    assert(weights.shape() == grad_weights.shape() && grad_weights.shape() == m_weights.shape() && m_weights.shape() == v_weights.shape());
 
     m_weights = beta1 * m_weights + (1.0f - beta1) * grad_weights;
     v_weights = beta2 * v_weights + (1.0f - beta2) * xt::square(grad_weights);
@@ -166,6 +167,7 @@ void update_adam_1d(xt::xtensor<float, 1>& weights, xt::xtensor<float, 1>& grad_
 void update_adam_2d(xt::xtensor<float, 2>& weights, xt::xtensor<float, 2>& grad_weights,
                     xt::xtensor<float, 2>& m_weights, xt::xtensor<float, 2>& v_weights,
                     float lr, float beta1, float beta2, float epsilon, size_t timestep) {
+    assert(weights.shape() == grad_weights.shape() && grad_weights.shape() == m_weights.shape() && m_weights.shape() == v_weights.shape());
 
     m_weights = beta1 * m_weights + (1.0f - beta1) * grad_weights;
     v_weights = beta2 * v_weights + (1.0f - beta2) * xt::square(grad_weights);
@@ -181,6 +183,7 @@ void update_adam_2d(xt::xtensor<float, 2>& weights, xt::xtensor<float, 2>& grad_
 void update_adam_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad_weights,
                     xt::xtensor<float, 4>& m_weights, xt::xtensor<float, 4>& v_weights,
                     float lr, float beta1, float beta2, float epsilon, size_t timestep) {
+    assert(weights.shape() == grad_weights.shape() && grad_weights.shape() == m_weights.shape() && m_weights.shape() == v_weights.shape());
 
     m_weights = beta1 * m_weights + (1.0f - beta1) * grad_weights;
     v_weights = beta2 * v_weights + (1.0f - beta2) * xt::square(grad_weights);
@@ -191,4 +194,16 @@ void update_adam_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad_
     weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + epsilon);
 
     grad_weights.fill(0);
+}
+
+
+void print_2d(xt::xtensor<float, 2>& inp) {
+    for (size_t r = 0; r < inp.shape()[0]; r++) {
+        std::string s;
+        for (size_t c = 0; c < inp.shape()[1]; c++) {
+            s += std::to_string(inp(r, c)) + " ";
+        }
+
+        std::cout << s << std::endl;
+    }
 }

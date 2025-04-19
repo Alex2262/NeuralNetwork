@@ -19,6 +19,7 @@ public:
 
     virtual ~Layer() = default;
 
+    virtual std::string get_name() const = 0;
     virtual std::vector<size_t> get_input_size() const = 0;
     virtual std::vector<size_t> get_output_size() const = 0;
 
