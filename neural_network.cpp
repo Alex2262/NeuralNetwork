@@ -29,6 +29,22 @@ void NeuralNetwork::backprop(const xt::xarray<float>& inputs, const xt::xarray<f
     xt::xarray<float> output = layers.back()->get_outputs();
     xt::xarray<float> delta = get_output_error(output, activation, labels, layers.back()->get_activation_id(), cost_id);
 
+    /*
+    print_shape(activation.shape());
+
+    xt::xtensor<float, 2> act = xt::reshape_view(activation, {activation.shape()[0] * activation.shape()[1], activation.shape()[2]});
+    xt::xarray<size_t> pred = xt::argmax(act, 1);
+    for (int i = 0; i < act.shape()[0]; i++) {
+        std::string s;
+        for (int j = 0; j < act.shape()[1]; j++) {
+            s += std::to_string(act(i, j)) + " ";
+        }
+
+        std::cout << s << std::endl;
+        std::cout << "PRED " << pred[i] << std::endl;
+    }
+     */
+
     for (int i = static_cast<int>(layers.size() - 1); i >= 0; i--) {
         delta = layers[i]->backprop(delta, i != layers.size() - 1);
     }
@@ -55,12 +71,19 @@ void NeuralNetwork::update_adam(const xt::xarray<float>& inputs,
 }
 
 float NeuralNetwork::evaluate(const xt::xarray<float>& inputs, const xt::xarray<float>& labels) {
+    xt::xarray<float> test_labels = labels;
     size_t batch_size = inputs.shape()[0];
 
     xt::xarray<float> activations = feedforward(inputs, true);
 
+    if (labels.shape().size() == 3) {
+        batch_size = activations.shape()[0] * activations.shape()[1];
+        activations = xt::reshape_view(activations, {batch_size, activations.shape()[2]});
+        test_labels = xt::reshape_view(test_labels, {batch_size, test_labels.shape()[2]});
+    }
+
     xt::xarray<size_t> pred_indices = xt::argmax(activations, 1);
-    xt::xarray<size_t> true_indices = xt::argmax(labels, 1);
+    xt::xarray<size_t> true_indices = xt::argmax(test_labels, 1);
 
     int correct = 0;
 
@@ -77,7 +100,15 @@ float NeuralNetwork::evaluate(const xt::xarray<float>& inputs, const xt::xarray<
 float NeuralNetwork::loss(const xt::xarray<float>& inputs, const xt::xarray<float>& labels) {
     auto cost_function = get_cost_function(cost_id);
     xt::xarray<float> activations = feedforward(inputs, true);
-    return cost_function(activations, labels);
+    xt::xarray<float> test_labels = labels;
+
+    if (labels.shape().size() == 3) {
+        size_t batch_size = activations.shape()[0] * activations.shape()[1];
+        activations = xt::reshape_view(activations, {batch_size, activations.shape()[2]});
+        test_labels = xt::reshape_view(test_labels, {batch_size, test_labels.shape()[2]});
+    }
+
+    return cost_function(activations, test_labels);
 }
 
 void NeuralNetwork::SGD(const std::vector<xt::xarray<float>>& training_inputs,

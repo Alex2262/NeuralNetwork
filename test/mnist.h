@@ -16,12 +16,13 @@ void load_mnist_data(const std::string& file_path,
 
 std::vector<xt::xarray<float>> get_3d(std::vector<xt::xarray<float>>& images);
 
-void show_image(const xt::xarray<float>& image);
+void show_image(const xt::xarray<float>& image, int label, int pred, float prob);
 
 void show_images(NeuralNetwork& nn,
                  std::vector<xt::xarray<float>>& train_images,
                  std::vector<xt::xarray<float>>& train_labels);
 
+void demo();
 void test_mnist();
 void test_mnist_cnn();
 

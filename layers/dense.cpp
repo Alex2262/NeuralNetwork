@@ -14,8 +14,10 @@ Dense::Dense(const std::vector<std::size_t>& p_input_size, size_t p_num_neurons,
     output_size = p_input_size;
     output_size[output_size.size() - 1] = out_neurons;
 
-    weights = xt::random::rand<float>({out_neurons, inp_neurons}, -1.0, 1.0);
-    biases = xt::random::rand<float>({out_neurons}, -1.0, 1.0);
+    // HE Initialization
+    float limit = std::sqrt(6.0f / static_cast<float>(inp_neurons));
+    weights = xt::random::rand<float>({out_neurons, inp_neurons}, -limit, limit);
+    biases = xt::zeros<float>({out_neurons});
 
     grad_weights = xt::zeros_like(weights);
     grad_biases = xt::zeros_like(biases);

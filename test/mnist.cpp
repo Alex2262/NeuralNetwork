@@ -105,7 +105,7 @@ std::vector<xt::xarray<float>> get_3d(std::vector<xt::xarray<float>>& images) {
 }
 
 
-void show_image(const xt::xarray<float>& image) {
+void show_image(const xt::xarray<float>& image, int label, int pred, float prob) {
     cv::Mat img_mat(28, 28, CV_64F);
     for (int i = 0; i < 28; ++i) {
         for (int j = 0; j < 28; ++j) {
@@ -116,10 +116,39 @@ void show_image(const xt::xarray<float>& image) {
     img_mat *= 255.0;
     img_mat.convertTo(img_mat, CV_8U);
 
+    cv::resize(img_mat, img_mat, cv::Size(500, 500), 0, 0, cv::INTER_NEAREST);
+
+    std::string label_str = "Label: " + std::to_string(label);
+    std::string pred_str = "Pred: " + std::to_string(pred);
+    std::string prob_str = "Prob: " + std::to_string(prob);
+    cv::putText(img_mat, label_str, cv::Point(5, 430), cv::FONT_HERSHEY_SIMPLEX,
+                1, cv::Scalar(400), 2);
+    cv::putText(img_mat, pred_str, cv::Point(5, 460), cv::FONT_HERSHEY_SIMPLEX,
+                1, cv::Scalar(400), 2);
+    cv::putText(img_mat, prob_str, cv::Point(5, 490), cv::FONT_HERSHEY_SIMPLEX,
+                1, cv::Scalar(400), 2);
+
     cv::imshow("MNIST Image", img_mat);
     cv::waitKey(0);
 }
 
+
+void demo() {
+    std::vector<xt::xarray<float>> train_images, train_labels;
+    std::vector<xt::xarray<float>> test_images, test_labels;
+
+    load_mnist_data("/Users/alexandertian/CLionProjects/NeuralNetwork/test/mnist-original.mat",
+                    train_images, train_labels, test_images, test_labels, 0.8, 70000);
+
+    std::vector<size_t> input_size = {784};
+    NeuralNetwork nn(input_size, CostID::CEL);
+
+    nn.add_layer<Dense>(4096, ActivationID::RELU);
+    nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
+
+    nn.SGD(train_images, train_labels, test_images, test_labels, 5, 64, 0.1);
+    show_images(nn, train_images, train_labels);
+}
 
 void test_mnist() {
     std::vector<xt::xarray<float>> train_images, train_labels;
@@ -132,12 +161,15 @@ void test_mnist() {
     std::vector<size_t> input_size = {784};
     NeuralNetwork nn(input_size, CostID::CEL);
 
-
+    /*
     nn.add_layer<Dense>(256, ActivationID::NONE);
     nn.add_layer<Normalize>();
     nn.add_layer<Activation>(ActivationID::RELU);
     nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
+    */
 
+    nn.add_layer<Dense>(30, ActivationID::RELU);
+    nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
 
     /*
     nn.add_layer<Activation>(ActivationID::NONE);
@@ -228,11 +260,17 @@ void show_images(NeuralNetwork& nn,
 
         xt::xarray<float> pred = nn.feedforward(sample, true);
 
+        int best = 0;
+        float mx = 0;
         for (int i = 0; i < 10; i++) {
-            std::cout << "Digit " << i << " Probability: " << pred(0, i) << std::endl;
+            if (pred(0, i) > mx) {
+                best = i;
+                mx = pred(0, i);
+            }
+            // text += "Digit " + std::to_string(i) + " Probability: " + std::to_string(pred(0, i)) + "\n";
         }
 
-        show_image(train_images[ind]);
+        show_image(train_images[ind], true_lab, best, mx);
         ind++;
     }
 }

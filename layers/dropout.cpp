@@ -15,7 +15,8 @@ Dropout::Dropout(const std::vector<size_t>& p_input_size, float p_dropout_rate) 
 xt::xarray<float> Dropout::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
     if (evaluation_mode) {
         mask = xt::ones_like(inputs);
-        return inputs;
+        outputs = inputs;
+        return outputs;
     }
 
     xt::xarray<float> random = xt::random::rand<float>(inputs.shape(), 0.0f, 1.0f);
@@ -27,5 +28,6 @@ xt::xarray<float> Dropout::feedforward(const xt::xarray<float>& inputs, bool eva
 }
 
 xt::xarray<float> Dropout::backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) {
-    return p_delta * mask;
+    xt::xarray<float> delta = p_delta + res_delta;
+    return delta * mask;
 }

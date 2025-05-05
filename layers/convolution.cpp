@@ -19,8 +19,9 @@ Convolution::Convolution(std::vector<size_t>& p_input_size, size_t p_num_filters
 
     output_size = {out_h, out_w, num_filters};
 
-    weights = xt::random::randn<float>({num_filters, filter_size, filter_size, input_size[2]});
-    biases = xt::random::randn<float>({num_filters});
+    float limit = std::sqrt(6.0f / static_cast<float>(filter_size * filter_size * input_size[2]));
+    weights = xt::random::randn<float>({num_filters, filter_size, filter_size, input_size[2]}, -limit, limit);
+    biases = xt::zeros<float>({num_filters});
 
     grad_weights = xt::zeros_like(weights);
     grad_biases = xt::zeros_like(biases);

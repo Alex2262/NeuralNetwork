@@ -24,4 +24,10 @@ enum class CostID {
     NONE
 };
 
+enum class LLM_MODE {
+    CHARS,
+    LOWER_CHARS,
+    WORDS
+};
+
 #endif //NEURALNETWORK_TYPES_H

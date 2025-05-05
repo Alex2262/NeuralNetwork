@@ -9,6 +9,7 @@
 
 #include "../layers/attention.h"
 #include "../layers/dense.h"
+#include "../layers/dropout.h"
 #include "../layers/embedding.h"
 #include "../layers/flatten.h"
 #include "../layers/normalize.h"
@@ -16,6 +17,70 @@
 #include "../layers/res_add.h"
 
 
+std::vector<std::string> get_chars(std::string& s) {
+    std::vector<std::string> ret;
+    for (char c : s) {
+        std::string char_str{c};
+        ret.push_back(char_str);
+    }
+
+    return ret;
+}
+
+std::vector<std::string> get_lower_chars(std::string& s) {
+    std::vector<std::string> ret;
+    for (char c : s) {
+        std::string char_str{static_cast<char>(std::tolower(c))};
+        ret.push_back(char_str);
+    }
+
+    return ret;
+}
+
+std::vector<std::string> get_words(std::string& s) {
+    std::vector<std::string> ret;
+
+    std::string curr;
+    for (char c : s) {
+        if (isalpha(c)) {
+            curr += c;
+            continue;
+        }
+
+        if (c == ' ') {
+            if (!curr.empty()) ret.push_back(curr);
+            curr = ' ';
+            continue;
+        }
+
+        if (c == '\'') {
+            if (!curr.empty() && curr != " ") {
+                ret.push_back(curr);
+                curr = "";
+            }
+            curr += c;
+            continue;
+        }
+
+        if (!curr.empty()) ret.push_back(curr);
+        curr = "";
+        curr += c;
+        ret.push_back(curr);
+        curr = "";
+    }
+
+    if (!curr.empty()) {
+        ret.push_back(curr);
+    }
+
+    return ret;
+}
+
+std::vector<std::string> LLM::get_tokens(std::string& s) {
+    if (llm_mode == LLM_MODE::CHARS) return get_chars(s);
+    else if (llm_mode == LLM_MODE::LOWER_CHARS) return get_lower_chars(s);
+    else return get_words(s);
+}
 
 void LLM::set_data() {
     for (std::string& file_name : file_names) {
@@ -25,28 +90,28 @@ void LLM::set_data() {
             throw std::runtime_error("Cannot Open File");
         }
 
-        std::vector<size_t> file_data;
-
         std::string line;
         size_t num_lines = 0;
         while (getline(file, line)) {
             line += "\n";
-            for (char c : line) {
-                if (encode_map.find(c) == encode_map.end()) {
-                    // std::cout << "ENCODING " << c << " to " << vocab_size << std::endl;
-                    encode_map[c] = vocab_size;
-                    decode_map[vocab_size] = c;
+
+            std::vector<std::string> vec_inputs = get_tokens(line);
+
+            for (std::string& s : vec_inputs) {
+                if (encode_map.find(s) == encode_map.end()) {
+                    std::cout << "ENCODING " << s << " as " << vocab_size << std::endl;
+                    encode_map[s] = vocab_size;
+                    decode_map[vocab_size] = s;
                     vocab_size++;
                 }
 
-                file_data.push_back(encode_map[c]);
+                all_encoded.push_back(encode_map[s]);
             }
 
             num_lines++;
             if (num_lines >= MAX_LINES) break;
         }
 
-        all_encoded.push_back(file_data);
         file.close();
     }
 
@@ -64,15 +129,17 @@ void LLM::sanity_checks() const {
     }
 }
 
-LLM::LLM(size_t p_num_layers, size_t p_num_heads, size_t p_max_seq_len, size_t p_d_model, size_t p_dense_neurons, std::vector<std::string>& p_file_names)
+LLM::LLM(size_t p_num_layers, size_t p_num_heads, size_t p_max_seq_len, size_t p_d_model, float p_dropout_rate, std::vector<std::string>& p_file_names)
          : nn({p_max_seq_len}, CostID::CEL) {
 
     num_heads     = p_num_heads;
     num_layers    = p_num_layers;
     max_seq_len   = p_max_seq_len;
     d_model       = p_d_model;
-    dense_neurons = p_dense_neurons;
+    dense_neurons = p_d_model * 4;
     vocab_size    = 0;
+
+    dropout_rate = p_dropout_rate;
 
     training_data_size = 0;
 
@@ -85,11 +152,15 @@ LLM::LLM(size_t p_num_layers, size_t p_num_heads, size_t p_max_seq_len, size_t p
     nn.add_layer<Embedding>(vocab_size, d_model, ActivationID::NONE);
     auto* embedding_layer = dynamic_cast<Embedding*>(nn.get_layer(0));
 
+    nn.add_layer<Dropout>(dropout_rate);
+
     for (size_t layer = 0; layer < num_layers; layer++) {
         Layer* prev_out = nn.get_layer(nn.get_num_layers() - 1);
 
         nn.add_layer<Normalize>();
         nn.add_layer<Attention>(num_heads, ActivationID::NONE);
+        nn.add_layer<Dropout>(dropout_rate);
+
         nn.add_layer<ResAdd>(prev_out);
 
         Layer* res_out_1 = nn.get_layer(nn.get_num_layers() - 1);
@@ -97,6 +168,7 @@ LLM::LLM(size_t p_num_layers, size_t p_num_heads, size_t p_max_seq_len, size_t p
         nn.add_layer<Normalize>();
         nn.add_layer<Dense>(dense_neurons, ActivationID::RELU);
         nn.add_layer<Dense>(d_model, ActivationID::NONE);  // linear transformation back to D, no activation
+        nn.add_layer<Dropout>(dropout_rate);
 
         nn.add_layer<ResAdd>(res_out_1);
     }
@@ -112,75 +184,87 @@ LLM::LLM(size_t p_num_layers, size_t p_num_heads, size_t p_max_seq_len, size_t p
 void LLM::split_encoded(float split) {
     training_data_size = 0;
 
-    for (const auto& file_data : all_encoded) {
-        train_encoded.emplace_back();
-        test_encoded.emplace_back();
+    auto amt = static_cast<size_t>(static_cast<float>(all_encoded.size()) * split);
 
-        auto amt = static_cast<size_t>(static_cast<float>(file_data.size()) * split);
-        for (size_t i = 0; i < amt; i++) {
-            training_data_size++;
-            train_encoded.back().push_back(file_data[i]);
-        }
+    for (size_t i = 0; i < amt; i++) {
+        training_data_size++;
+        train_encoded.push_back(all_encoded[i]);
+    }
 
-        for (size_t i = amt; i < file_data.size(); i++) {
-            test_encoded.back().push_back(file_data[i]);
-        }
+    for (size_t i = amt; i < all_encoded.size(); i++) {
+        test_encoded.push_back(all_encoded[i]);
     }
 
     std::cout << "Training Data Size: " << training_data_size << std::endl;
 }
 
+std::pair<xt::xtensor<float, 2>, xt::xtensor<float, 3>> LLM::index_test_batch(size_t batch_size, size_t ind) {
+    xt::xtensor<float, 2> data = xt::zeros<float>({batch_size, max_seq_len});
+    xt::xtensor<float, 3> labels = xt::zeros<float>({batch_size, max_seq_len, vocab_size});
 
-std::pair<xt::xtensor<float, 2>, xt::xtensor<float, 3>> LLM::get_test_data() {
-    size_t total_size = 0;
-    for (const auto& file_data : test_encoded) total_size += (file_data.size() - max_seq_len);
-
-    xt::xtensor<float, 2> test_data = xt::zeros<float>({total_size, max_seq_len});
-    xt::xtensor<float, 3> test_label = xt::zeros<float>({total_size, max_seq_len, vocab_size});
-
-    size_t ind = 0;
-    for (const auto& file_data : test_encoded) {
-        for (size_t start = 0; start <= file_data.size() - max_seq_len - 1; start++) {
-            for (size_t i = 0; i < max_seq_len; i++) {
-                test_data(ind, i) = static_cast<float>(file_data[start + i]);
-                test_label(ind, i, file_data[start + i + 1]) = 1.0f;
-            }
-
-            ind++;
+    for (size_t batch = 0; batch < batch_size; batch++) {
+        size_t start = ind + batch * max_seq_len;
+        for (size_t i = 0; i < max_seq_len; i++) {
+            data(batch, i) = static_cast<float>(test_encoded[start + i]);
+            labels(batch, i, test_encoded[start + i + 1]) = 1.0f;
         }
     }
 
-    return {test_data, test_label};
+    return {data, labels};
+}
+
+float LLM::batched_evaluate(size_t batch_size) {
+    size_t num_batches = (test_encoded.size() - 1) / (batch_size * max_seq_len);
+
+    float accuracy = 0;
+    for (size_t batch = 0; batch < num_batches; batch++) {
+        size_t ind = batch * batch_size * max_seq_len;
+        auto [test_data, test_labels] = index_test_batch(batch_size, ind);
+
+        accuracy += nn.evaluate(test_data, test_labels);
+
+        float progress = static_cast<float>(batch + 1) / static_cast<float>(num_batches) * 100;
+
+        std::cout << "\r Evaluation Progress: " << std::fixed << std::setprecision(4) << progress << "% complete";
+        std::fflush(stdout);
+    }
+
+    accuracy /= static_cast<float>(num_batches);
+    return accuracy;
+}
+
+float LLM::batched_loss(size_t batch_size) {
+    size_t num_batches = (test_encoded.size() - 1) / (batch_size * max_seq_len);
+
+    float loss = 0;
+    for (size_t batch = 0; batch < num_batches; batch++) {
+        size_t ind = batch * batch_size * max_seq_len;
+        auto [test_data, test_labels] = index_test_batch(batch_size, ind);
+
+        loss += nn.loss(test_data, test_labels);
+
+        float progress = static_cast<float>(batch + 1) / static_cast<float>(num_batches) * 100;
+
+        std::cout << "\r Loss Progress: " << std::fixed << std::setprecision(4) << progress << "% complete";
+        std::fflush(stdout);
+    }
+
+    loss /= static_cast<float>(num_batches);
+    return loss;
 }
 
 
 std::pair<xt::xtensor<float, 2>, xt::xtensor<float, 3>> LLM::get_random_batch(size_t batch_size) {
-    std::vector<std::uniform_int_distribution<size_t>> dis;
-    dis.reserve(train_encoded.size());
-
-    for (const auto& file_data : train_encoded) {
-        dis.emplace_back(0, file_data.size() - max_seq_len - 1);
-    }
-
-    std::uniform_int_distribution<size_t> file_chooser_dis(0, training_data_size - 1);
+    std::uniform_int_distribution<size_t> dis(0, train_encoded.size() - max_seq_len - 1);
 
     xt::xtensor<float, 2> data = xt::zeros<float>({batch_size, max_seq_len});
     xt::xtensor<float, 3> labels = xt::zeros<float>({batch_size, max_seq_len, vocab_size});
 
     for (size_t batch = 0; batch < batch_size; batch++) {
-        size_t file_choice_rn = file_chooser_dis(gen);
-        size_t file_choice = 0;
-        size_t accum_size = 0;
-        for (const auto& file_data : train_encoded) {
-            accum_size += file_data.size();
-            if (accum_size > file_choice_rn) break;
-            file_choice++;
-        }
-
-        size_t start = dis[file_choice](gen);
+        size_t start = dis(gen);
         for (size_t i = 0; i < max_seq_len; i++) {
-            data(batch, i) = static_cast<float>(train_encoded[file_choice][start + i]);
-            labels(batch, i, train_encoded[file_choice][start + i + 1]) = 1.0f;
+            data(batch, i) = static_cast<float>(train_encoded[start + i]);
+            labels(batch, i, train_encoded[start + i + 1]) = 1.0f;
         }
     }
 
@@ -188,43 +272,39 @@ std::pair<xt::xtensor<float, 2>, xt::xtensor<float, 3>> LLM::get_random_batch(si
 }
 
 
-void LLM::train(size_t epochs, size_t mini_batch_size, float split, float lr, float beta1, float beta2, float epsilon) {
+void LLM::train(size_t max_tokens, size_t eval_interval, size_t mini_batch_size, float split, float lr, float beta1, float beta2, float epsilon) {
     gen.seed(rd());
 
     split_encoded(split);
-    auto [test_data, test_labels] = get_test_data();
 
-    for (size_t epoch = 1; epoch <= epochs; epoch++) {
-        size_t num_batches = (training_data_size + mini_batch_size - 1) / mini_batch_size;
+    size_t num_tokens = 0;
+    size_t prev_tokens = 0;
 
-        for (size_t batch = 1; batch <= num_batches; batch++) {
-            auto [train_data, train_labels] = get_random_batch(mini_batch_size);
+    while (num_tokens < max_tokens) {
+        prev_tokens = num_tokens;
+        num_tokens += mini_batch_size * max_seq_len;
+        auto [train_data, train_labels] = get_random_batch(mini_batch_size);
 
-            /*
-            std::cout << "BATCH DATA RECEIVED" << std::endl;
-
-            for (size_t b = 0; b < mini_batch_size; b++) {
-                std::string s;
-                for (size_t i = 0; i < max_seq_len; i++) {
-                    s += decode_map[static_cast<size_t>(train_data(b, i))];
-                }
-
-                std::cout << s << std::endl;
-            }
-             */
-
-
-            nn.update_adam(train_data, train_labels, lr, beta1, beta2, epsilon);
-            float percent_complete = (static_cast<float>(batch) /
-                                      static_cast<float>(num_batches)) * 100;
-
-            std::cout << "\rEpoch #" << epoch << " progress: " << std::fixed << std::setprecision(4) << percent_complete << "% complete";
-            std::fflush(stdout);
+        bool check = false;
+        if (num_tokens % eval_interval < prev_tokens % eval_interval) {
+            check = true;
         }
 
-        float current_accuracy = nn.evaluate(test_data, test_labels);
-        float current_loss     = nn.loss(test_data, test_labels);
-        std::cout << "\rEpoch #" << epoch << " | Accuracy: " << current_accuracy << " | Loss: " << current_loss << std::endl;
+        nn.update_adam(train_data, train_labels, lr, beta1, beta2, epsilon);
+        float percent_complete = (static_cast<float>(num_tokens % eval_interval) /
+                                  static_cast<float>(eval_interval)) * 100;
+
+        if (check) percent_complete = 100;
+
+        std::cout << "\rToken #" << num_tokens << " | progress: " << std::fixed << std::setprecision(4) << percent_complete << "% complete";
+        std::fflush(stdout);
+
+        if (check) {
+            float current_accuracy = batched_evaluate(mini_batch_size);
+            float current_loss     = batched_loss(mini_batch_size);
+            std::cout << "\rToken #" << num_tokens << " | Accuracy: " << current_accuracy << " | Loss: " << current_loss << std::endl;
+            std::fflush(stdout);
+        }
     }
 }
 
@@ -233,9 +313,9 @@ void LLM::train(size_t epochs, size_t mini_batch_size, float split, float lr, fl
 
 void LLM::run() {
     std::string input;
-    size_t curr_seq_len = 0;
     while (getline(std::cin, input)) {
-        curr_seq_len = input.size();
+        std::vector<std::string> vec_inputs = get_tokens(input);
+        size_t curr_seq_len = vec_inputs.size();
 
         if (curr_seq_len >= max_seq_len) {
             std::cout << "EXCEEDED SEQUENCE LENGTH" << std::endl;
@@ -244,7 +324,7 @@ void LLM::run() {
 
         xt::xtensor<float, 2> tensor_inputs = xt::zeros<float>(std::vector<size_t>{1, max_seq_len});
 
-        for (int i = 0; i < curr_seq_len; i++) tensor_inputs(0, i) = static_cast<float>(encode_map[input[i]]);
+        for (int i = 0; i < curr_seq_len; i++) tensor_inputs(0, i) = static_cast<float>(encode_map[vec_inputs[i]]);
 
         while (curr_seq_len < max_seq_len) {
 
@@ -260,7 +340,7 @@ void LLM::run() {
             }
 
             tensor_inputs(0, curr_seq_len) = static_cast<float>(best);
-            std::cout << decode_map[best];
+            std::cout << decode_map[best] << std::flush;
             curr_seq_len++;
         }
 

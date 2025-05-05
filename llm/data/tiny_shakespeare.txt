@@ -2870,7 +2870,7 @@ And follow to thine answer.
 CORIOLANUS:
 Hence, old goat!
 
-Senators, &C:
+Senators:
 We'll surety him.
 
 COMINIUS:
@@ -2895,7 +2895,7 @@ Seize him, AEdiles!
 Citizens:
 Down with him! down with him!
 
-Senators, &C:
+Senators:
 Weapons, weapons, weapons!
 'Tribunes!' 'Patricians!' 'Citizens!' 'What, ho!'
 'Sicinius!' 'Brutus!' 'Coriolanus!' 'Citizens!'
@@ -23958,7 +23958,7 @@ Come, fellow-soldier, make thou proclamation.
 
 Soldier:
 Edward the Fourth, by the grace of God, king of
-England and France, and lord of Ireland, &c.
+England and France, and lord of Ireland.
 
 MONTAGUE:
 And whosoe'er gainsays King Edward's right,
@@ -24067,7 +24067,7 @@ KING EDWARD IV:
 Seize on the shame-faced Henry, bear him hence;
 And once again proclaim us King of England.
 You are the fount that makes small brooks to flow:
-Now stops thy spring; my sea sha$l suck them dry,
+Now stops thy spring; my sea shall suck them dry,
 And swell so much the higher by their ebb.
 Hence with him to the Tower; let him not speak.
 And, lords, towards Coventry bend we our course
