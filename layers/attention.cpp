@@ -20,11 +20,11 @@ Attention::Attention(const std::vector<size_t>& p_input_size, size_t p_num_heads
 
     d_k = d_model / num_heads;
 
-    float limit = std::sqrt(6.0f / static_cast<float>(d_model));
-    weights_q = xt::random::rand<float>({d_model, d_model}, -limit, limit);
-    weights_k = xt::random::rand<float>({d_model, d_model}, -limit, limit);
-    weights_v = xt::random::rand<float>({d_model, d_model}, -limit, limit);
-    weights_o = xt::random::rand<float>({d_model, d_model}, -limit, limit);
+    float stddev = std::sqrt(1.0f / static_cast<float>(d_model));
+    weights_q = stddev * xt::random::randn<float>({d_model, d_model});
+    weights_k = stddev * xt::random::randn<float>({d_model, d_model});
+    weights_v = stddev * xt::random::randn<float>({d_model, d_model});
+    weights_o = stddev * xt::random::randn<float>({d_model, d_model});
 
     grad_weights_q = xt::zeros_like(weights_q);
     grad_weights_k = xt::zeros_like(weights_k);

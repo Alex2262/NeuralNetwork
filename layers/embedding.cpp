@@ -13,10 +13,9 @@ Embedding::Embedding(const std::vector<size_t>& p_input_size, size_t p_vocab_siz
     input_size = p_input_size;
     output_size = {max_seq_len, d_model};
 
-    // GPT style Initialization
-    float limit = 1.0f / std::sqrt(static_cast<float>(d_model));
-    embedding_matrix = xt::random::rand<float>({vocab_size, d_model}, -limit, limit);
-    positional_matrix = xt::random::rand<float>({max_seq_len, d_model}, -limit, limit);
+    float stddev = 1.0f / std::sqrt(static_cast<float>(d_model));
+    embedding_matrix = stddev * xt::random::rand<float>({vocab_size, d_model});
+    positional_matrix = stddev * xt::random::rand<float>({max_seq_len, d_model});
 
     grad_embedding_matrix = xt::zeros_like(embedding_matrix);
     grad_positional_matrix = xt::zeros_like(positional_matrix);

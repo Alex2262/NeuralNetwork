@@ -166,7 +166,7 @@ LLM::LLM(size_t p_num_layers, size_t p_num_heads, size_t p_max_seq_len, size_t p
         Layer* res_out_1 = nn.get_layer(nn.get_num_layers() - 1);
 
         nn.add_layer<Normalize>();
-        nn.add_layer<Dense>(dense_neurons, ActivationID::RELU);
+        nn.add_layer<Dense>(dense_neurons, ActivationID::GELU);
         nn.add_layer<Dense>(d_model, ActivationID::NONE);  // linear transformation back to D, no activation
         nn.add_layer<Dropout>(dropout_rate);
 

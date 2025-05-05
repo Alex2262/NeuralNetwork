@@ -15,6 +15,7 @@ enum class ActivationID {
     RELU,
     SIGMOID,
     SOFTMAX,
+    GELU,
     NONE
 };
 

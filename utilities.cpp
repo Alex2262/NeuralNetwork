@@ -20,6 +20,42 @@ xt::xarray<float> ReLU_derivative(const xt::xarray<float>& x) {
     return xt::where(x > 0.0, 1.0, 0.0);
 }
 
+xt::xarray<float> GELU(const xt::xarray<float>& x) {
+    const float sqrt2 = std::sqrt(2.0f);
+    return 0.5f * x * (1.0f + xt::erf(x / sqrt2));
+}
+
+xt::xarray<float> GELU_derivative(const xt::xarray<float>& x) {
+    const float sqrt2 = std::sqrt(2.0f);
+    const auto inv_sqrt2pi = 1.0f / static_cast<float>(std::sqrt(2.0f * M_PI));
+    auto erf_term = xt::erf(x / sqrt2);
+    auto pdf = xt::exp(-0.5f * x * x) * inv_sqrt2pi;
+    return 0.5f * (1.0f + erf_term) + 0.5f * x * pdf;
+}
+
+// GELU APPROX
+xt::xarray<float> GELU_approx(const xt::xarray<float>& x) {
+    const auto sqrt_2_over_pi = static_cast<float>(std::sqrt(2.0f / M_PI));
+    const float c = 0.044715f;
+    auto x3 = xt::pow(x, 3);
+    auto arg = sqrt_2_over_pi * (x + c * x3);
+    return 0.5f * x * (1.0f + xt::tanh(arg));
+}
+
+xt::xarray<float> GELU_approx_derivative(const xt::xarray<float>& x) {
+    const auto sqrt_2_over_pi = static_cast<float>(std::sqrt(2.0f / M_PI));
+    const float c = 0.044715f;
+
+    auto x2       = xt::pow(x, 2);
+    auto x3       = x * x2;
+    auto arg      = sqrt_2_over_pi * (x + c * x3);
+    auto tanh_arg = xt::tanh(arg);
+    auto sech2    = 1.0f - tanh_arg * tanh_arg;
+    auto inner    = sqrt_2_over_pi * (1.0f + 3.0f * c * x2);
+
+    return 0.5f * (1.0f + tanh_arg) + 0.5f * x * inner * sech2;
+}
+
 xt::xarray<float> sigmoid(const xt::xarray<float>& x) {
     return 1.0 / (1.0 + xt::exp(-x));
 }
@@ -66,6 +102,7 @@ ActivationFunction get_activation_function(ActivationID activation_id) {
         case ActivationID::RELU: return ReLU;
         case ActivationID::SIGMOID: return sigmoid;
         case ActivationID::SOFTMAX: return softmax;
+        case ActivationID::GELU: return GELU_approx;
         default: return no_activation;
     }
 }
@@ -75,6 +112,7 @@ ActivationDerivative get_activation_derivative(ActivationID activation_id) {
         case ActivationID::RELU: return ReLU_derivative;
         case ActivationID::SIGMOID: return sigmoid_derivative;
         case ActivationID::SOFTMAX: return nullptr; // softmax derivative handled differently
+        case ActivationID::GELU: return GELU_approx_derivative;
         default: return no_activation_derivative;
     }
 }
