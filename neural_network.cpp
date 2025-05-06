@@ -16,17 +16,17 @@ Layer* NeuralNetwork::get_layer(size_t index) {
     return layers[index].get();
 }
 
-xt::xarray<float> NeuralNetwork::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
+xt::xarray<float> NeuralNetwork::feedforward(const xt::xarray<float>& inputs, Mode mode) {
     xt::xarray<float> activation = inputs;
     for (std::unique_ptr<Layer>& layer : layers) {
-        activation = layer->feedforward(activation, evaluation_mode);
+        activation = layer->feedforward(activation, mode);
     }
 
     return activation;
 }
 
 void NeuralNetwork::backprop(const xt::xarray<float>& inputs, const xt::xarray<float>& labels) {
-    xt::xarray<float> activation = feedforward(inputs, false);
+    xt::xarray<float> activation = feedforward(inputs, Mode::TRAINING);
     xt::xarray<float> output = layers.back()->get_outputs();
     xt::xarray<float> delta = get_output_error(output, activation, labels, layers.back()->get_activation_id(), cost_id);
 
@@ -47,21 +47,21 @@ void NeuralNetwork::update(const xt::xarray<float>& inputs,
 
 void NeuralNetwork::update_adam(const xt::xarray<float>& inputs,
                                 const xt::xarray<float>& labels,
-                                float lr, float beta1, float beta2, float epsilon) {
+                                float lr, float beta1, float beta2) {
     backprop(inputs, labels);
 
     for (std::unique_ptr<Layer>& layer : layers) {
-        layer->update_adam(lr, beta1, beta2, epsilon);
+        layer->update_adam(lr, beta1, beta2);
     }
 }
 
 void NeuralNetwork::update_adamw(const xt::xarray<float>& inputs,
                                  const xt::xarray<float>& labels,
-                                 float lr, float beta1, float beta2, float epsilon, float weight_decay) {
+                                 float lr, float beta1, float beta2, float weight_decay) {
     backprop(inputs, labels);
 
     for (std::unique_ptr<Layer>& layer : layers) {
-        layer->update_adamw(lr, beta1, beta2, epsilon, weight_decay);
+        layer->update_adamw(lr, beta1, beta2, weight_decay);
     }
 }
 
@@ -69,7 +69,7 @@ float NeuralNetwork::evaluate(const xt::xarray<float>& inputs, const xt::xarray<
     xt::xarray<float> test_labels = labels;
     size_t batch_size = inputs.shape()[0];
 
-    xt::xarray<float> activations = feedforward(inputs, true);
+    xt::xarray<float> activations = feedforward(inputs, Mode::EVALUATION);
 
     if (labels.shape().size() == 3) {
         batch_size = activations.shape()[0] * activations.shape()[1];
@@ -94,7 +94,7 @@ float NeuralNetwork::evaluate(const xt::xarray<float>& inputs, const xt::xarray<
 
 float NeuralNetwork::loss(const xt::xarray<float>& inputs, const xt::xarray<float>& labels) {
     auto cost_function = get_cost_function(cost_id);
-    xt::xarray<float> activations = feedforward(inputs, true);
+    xt::xarray<float> activations = feedforward(inputs, Mode::EVALUATION);
     xt::xarray<float> test_labels = labels;
 
     if (labels.shape().size() == 3) {
@@ -180,7 +180,7 @@ void NeuralNetwork::Adam(const std::vector<xt::xarray<float>>& training_inputs,
                          const std::vector<xt::xarray<float>>& training_labels,
                          const std::vector<xt::xarray<float>>& test_inputs,
                          const std::vector<xt::xarray<float>>& test_labels,
-                         size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2, float epsilon) {
+                         size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2) {
 
     auto conv_test_inputs = convert_vec_inputs(test_inputs);
     auto conv_test_labels = convert_vec_inputs(test_labels);
@@ -215,7 +215,7 @@ void NeuralNetwork::Adam(const std::vector<xt::xarray<float>>& training_inputs,
             xt::xarray<float> inputs = convert_vec_inputs(batch_inputs);
             xt::xarray<float> labels = convert_vec_inputs(batch_labels);
 
-            update_adam(inputs, labels, lr, beta1, beta2, epsilon);
+            update_adam(inputs, labels, lr, beta1, beta2);
 
             auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(
                     std::chrono::high_resolution_clock::now() - start_time
@@ -248,7 +248,7 @@ void NeuralNetwork::AdamW(const std::vector<xt::xarray<float>>& training_inputs,
                           const std::vector<xt::xarray<float>>& training_labels,
                           const std::vector<xt::xarray<float>>& test_inputs,
                           const std::vector<xt::xarray<float>>& test_labels,
-                          size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2, float epsilon, float weight_decay) {
+                          size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2, float weight_decay) {
 
     auto conv_test_inputs = convert_vec_inputs(test_inputs);
     auto conv_test_labels = convert_vec_inputs(test_labels);
@@ -283,7 +283,7 @@ void NeuralNetwork::AdamW(const std::vector<xt::xarray<float>>& training_inputs,
             xt::xarray<float> inputs = convert_vec_inputs(batch_inputs);
             xt::xarray<float> labels = convert_vec_inputs(batch_labels);
 
-            update_adam(inputs, labels, lr, beta1, beta2, epsilon);
+            update_adam(inputs, labels, lr, beta1, beta2);
 
             auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(
                     std::chrono::high_resolution_clock::now() - start_time

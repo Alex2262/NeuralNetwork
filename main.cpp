@@ -14,8 +14,8 @@ int main() {
     // demo();
 
     std::vector<std::string> file_names = {"/Users/alexandertian/CLionProjects/NeuralNetwork/llm/data/tiny_shakespeare.txt"};
-    LLM llm(12, 8, 64, 512, 0.0, file_names);
-    llm.train(4e6, 1e5, 32, 0.95, 0.0003, 0.9, 0.98, 1e-9, 0.01);
+    LLM llm(4, 4, 64, 128, 10, 0.0, 0.8, file_names);
+    llm.train(1e6, 1e5, 32, 0.95, 0.0003, 0.9, 0.98, 0.01);
     llm.gen_file("/Users/alexandertian/CLionProjects/NeuralNetwork/llm/outputs/test1.txt", 1000);
     llm.run();
 

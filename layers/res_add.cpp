@@ -10,7 +10,7 @@ ResAdd::ResAdd(const std::vector<size_t>& p_input_size, Layer* p_res_layer) {
     res_layer = p_res_layer;
 }
 
-xt::xarray<float> ResAdd::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
+xt::xarray<float> ResAdd::feedforward(const xt::xarray<float>& inputs, Mode mode) {
     const xt::xarray<float>& res_inputs = res_layer->get_activations();
 
     assert(std::equal(inputs.shape().begin(), inputs.shape().end(),

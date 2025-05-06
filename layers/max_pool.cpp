@@ -13,7 +13,7 @@ MaxPool::MaxPool(std::vector<size_t>& p_input_size, size_t p_pool_size, size_t p
     output_size = {out_h, out_w, input_size[2]};
 }
 
-xt::xarray<float> MaxPool::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
+xt::xarray<float> MaxPool::feedforward(const xt::xarray<float>& inputs, Mode mode) {
     size_t batch_size = inputs.shape()[0];
     input_activations = inputs;
 

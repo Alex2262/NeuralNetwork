@@ -5,13 +5,18 @@
 #include "projection.h"
 #include "../utilities.h"
 
-Projection::Projection(const std::vector<size_t>& p_input_size, Embedding* p_embedding_layer, ActivationID p_activation_id) {
+Projection::Projection(const std::vector<size_t>& p_input_size, Embedding* p_embedding_layer, size_t p_k, float p_temperature, ActivationID p_activation_id) {
     embedding_layer = p_embedding_layer;
     xt::xtensor<float, 2>& embedding_matrix = embedding_layer->get_embedding_matrix();
 
     vocab_size = embedding_matrix.shape()[0];
     d_model = embedding_matrix.shape()[1];
     max_seq_len = p_input_size[0];
+
+    temperature = p_temperature;
+    k = p_k;
+
+    std::cout << "INIT k " << k << " TEMP " << temperature << std::endl;
 
     input_size = p_input_size;
     output_size = {max_seq_len, vocab_size};
@@ -23,7 +28,7 @@ Projection::Projection(const std::vector<size_t>& p_input_size, Embedding* p_emb
     timestep = 0;
 }
 
-xt::xarray<float> Projection::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
+xt::xarray<float> Projection::feedforward(const xt::xarray<float>& inputs, Mode mode) {
     input_activation = inputs;
 
     size_t seq_len = max_seq_len;
@@ -31,6 +36,21 @@ xt::xarray<float> Projection::feedforward(const xt::xarray<float>& inputs, bool 
 
     xt::xtensor<float, 2>& embedding_matrix = embedding_layer->get_embedding_matrix();
     xt::xtensor<float, 2> raw_outputs = xt::linalg::dot(inputs, xt::transpose(embedding_matrix));
+
+    if (mode == Mode::INFERENCE) {
+        raw_outputs /= temperature;
+
+        if (k < vocab_size) {
+            xt::xtensor<size_t, 2> sorted_indices = xt::argsort(raw_outputs, 1);
+
+            for (size_t batch = 0; batch < raw_outputs.shape()[0]; batch++) {
+                for (size_t i = 0; i < vocab_size - k; i++) {
+                    // std::cout << "BAD " << i << " " << sorted_indices[i] << " " << raw_outputs(0, sorted_indices[i]) << std::endl;
+                    raw_outputs(batch, sorted_indices(batch, i)) = -1e9f;
+                }
+            }
+        }
+    }
 
     outputs = xt::reshape_view(raw_outputs, {batch_size, seq_len, vocab_size});
     activations = xt::reshape_view(activation_function(raw_outputs), {batch_size, seq_len, vocab_size});

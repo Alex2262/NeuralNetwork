@@ -13,7 +13,7 @@ Activation::Activation(const std::vector<size_t>& p_input_size, ActivationID p_a
 }
 
 
-xt::xarray<float> Activation::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
+xt::xarray<float> Activation::feedforward(const xt::xarray<float>& inputs, Mode mode) {
     outputs = inputs;
     return activation_function(outputs);
 }

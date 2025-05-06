@@ -11,6 +11,8 @@ using ActivationDerivative = std::function<xt::xarray<float>(const xt::xarray<fl
 using CostFunction = std::function<float(const xt::xarray<float>&, const xt::xarray<float>&)>;
 using CostDerivative = std::function<xt::xarray<float>(const xt::xarray<float>&, const xt::xarray<float>&)>;
 
+constexpr float EPSILON = 1e-9f;
+
 enum class ActivationID {
     RELU,
     SIGMOID,
@@ -25,10 +27,16 @@ enum class CostID {
     NONE
 };
 
-enum class LLM_MODE {
+enum class LLM_Mode {
     CHARS,
     LOWER_CHARS,
     WORDS
+};
+
+enum class Mode {
+    TRAINING,
+    EVALUATION,
+    INFERENCE
 };
 
 #endif //NEURALNETWORK_TYPES_H

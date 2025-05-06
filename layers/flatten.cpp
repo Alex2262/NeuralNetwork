@@ -11,7 +11,7 @@ Flatten::Flatten(const std::vector<size_t>& p_input_size) {
 }
 
 
-xt::xarray<float> Flatten::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
+xt::xarray<float> Flatten::feedforward(const xt::xarray<float>& inputs, Mode mode) {
     batch_size = inputs.shape()[0];
     outputs = xt::reshape_view(inputs, std::vector<size_t>{batch_size, output_size[0]});
     return outputs;

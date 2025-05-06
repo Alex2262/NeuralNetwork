@@ -37,27 +37,27 @@ void set_3d(xt::xtensor<float, 3>& inputs, xt::xtensor<float, 2>& value, size_t 
 
 void update_adam_1d(xt::xtensor<float, 1>& weights, xt::xtensor<float, 1>& grad_weights,
                     xt::xtensor<float, 1>& m_weights, xt::xtensor<float, 1>& v_weights,
-                    float lr, float beta1, float beta2, float epsilon, size_t timestep);
+                    float lr, float beta1, float beta2, size_t timestep);
 
 void update_adam_2d(xt::xtensor<float, 2>& weights, xt::xtensor<float, 2>& grad_weights,
                     xt::xtensor<float, 2>& m_weights, xt::xtensor<float, 2>& v_weights,
-                    float lr, float beta1, float beta2, float epsilon, size_t timestep);
+                    float lr, float beta1, float beta2, size_t timestep);
 
 void update_adam_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad_weights,
                     xt::xtensor<float, 4>& m_weights, xt::xtensor<float, 4>& v_weights,
-                    float lr, float beta1, float beta2, float epsilon, size_t timestep);
+                    float lr, float beta1, float beta2, size_t timestep);
 
 void update_adamw_1d(xt::xtensor<float, 1>& weights, xt::xtensor<float, 1>& grad_weights,
                      xt::xtensor<float, 1>& m_weights, xt::xtensor<float, 1>& v_weights,
-                     float lr, float beta1, float beta2, float epsilon, float weight_decay, size_t timestep);
+                     float lr, float beta1, float beta2, float weight_decay, size_t timestep);
 
 void update_adamw_2d(xt::xtensor<float, 2>& weights, xt::xtensor<float, 2>& grad_weights,
                      xt::xtensor<float, 2>& m_weights, xt::xtensor<float, 2>& v_weights,
-                     float lr, float beta1, float beta2, float epsilon, float weight_decay, size_t timestep);
+                     float lr, float beta1, float beta2, float weight_decay, size_t timestep);
 
 void update_adamw_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad_weights,
                      xt::xtensor<float, 4>& m_weights, xt::xtensor<float, 4>& v_weights,
-                     float lr, float beta1, float beta2, float epsilon, float weight_decay, size_t timestep);
+                     float lr, float beta1, float beta2, float weight_decay, size_t timestep);
 
 std::string format_time(size_t secs);
 

@@ -16,6 +16,9 @@ private:
     size_t vocab_size;
     size_t d_model;
     size_t max_seq_len;
+    size_t k;
+
+    float temperature;
 
     std::vector<size_t> input_size;
     std::vector<size_t> output_size;
@@ -30,15 +33,15 @@ private:
     Embedding* embedding_layer;
 
 public:
-    Projection(const std::vector<size_t>& p_input_size, Embedding* p_embedding_layer, ActivationID p_activation_id);
+    Projection(const std::vector<size_t>& p_input_size, Embedding* p_embedding_layer, size_t p_k, float p_temperature, ActivationID p_activation_id);
 
-    xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) override;
+    xt::xarray<float> feedforward(const xt::xarray<float>& inputs, Mode mode) override;
     xt::xarray<float> backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) override;
 
     std::string get_name() const override { return "Projection"; }
     void update(float lr) override {};
-    void update_adam(float lr, float beta1, float beta2, float epsilon) override {};
-    void update_adamw(float lr, float beta1, float beta2, float epsilon, float weight_decay) override {};
+    void update_adam(float lr, float beta1, float beta2) override {};
+    void update_adamw(float lr, float beta1, float beta2, float weight_decay) override {};
 
     [[nodiscard]] ActivationID get_activation_id() override { return activation_id; }
     [[nodiscard]] xt::xarray<float> get_outputs() override { return outputs; }

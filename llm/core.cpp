@@ -77,8 +77,8 @@ std::vector<std::string> get_words(std::string& s) {
 }
 
 std::vector<std::string> LLM::get_tokens(std::string& s) {
-    if (llm_mode == LLM_MODE::CHARS) return get_chars(s);
-    else if (llm_mode == LLM_MODE::LOWER_CHARS) return get_lower_chars(s);
+    if (llm_mode == LLM_Mode::CHARS) return get_chars(s);
+    else if (llm_mode == LLM_Mode::LOWER_CHARS) return get_lower_chars(s);
     else return get_words(s);
 }
 
@@ -127,9 +127,13 @@ void LLM::sanity_checks() const {
     if (vocab_size == 0) {
         throw std::runtime_error("Error: Vocab Size = 0");
     }
+
+    if (temperature == 0) {
+        throw std::runtime_error("Error: Temperature = 0");
+    }
 }
 
-LLM::LLM(size_t p_num_layers, size_t p_num_heads, size_t p_max_seq_len, size_t p_d_model, float p_dropout_rate, std::vector<std::string>& p_file_names)
+LLM::LLM(size_t p_num_layers, size_t p_num_heads, size_t p_max_seq_len, size_t p_d_model, size_t p_k, float p_dropout_rate, float p_temperature, std::vector<std::string>& p_file_names)
          : nn({p_max_seq_len}, CostID::CEL) {
 
     num_heads     = p_num_heads;
@@ -138,8 +142,10 @@ LLM::LLM(size_t p_num_layers, size_t p_num_heads, size_t p_max_seq_len, size_t p
     d_model       = p_d_model;
     dense_neurons = p_d_model * 4;
     vocab_size    = 0;
+    k             = p_k;
 
     dropout_rate = p_dropout_rate;
+    temperature  = p_temperature;
 
     training_data_size = 0;
 
@@ -175,7 +181,7 @@ LLM::LLM(size_t p_num_layers, size_t p_num_heads, size_t p_max_seq_len, size_t p
 
     nn.add_layer<Normalize>();
 
-    nn.add_layer<Projection>(embedding_layer, ActivationID::SOFTMAX);
+    nn.add_layer<Projection>(embedding_layer, k, temperature, ActivationID::SOFTMAX);
 
     std::cout << "LLM Initialization Complete" << std::endl;
     std::cout << "# params: " << nn.get_num_params() << std::endl;
@@ -276,7 +282,7 @@ std::pair<xt::xtensor<float, 2>, xt::xtensor<float, 3>> LLM::get_random_batch(si
 }
 
 
-void LLM::train(size_t max_tokens, size_t eval_interval, size_t mini_batch_size, float split, float lr, float beta1, float beta2, float epsilon, float weight_decay) {
+void LLM::train(size_t max_tokens, size_t eval_interval, size_t mini_batch_size, float split, float lr, float beta1, float beta2, float weight_decay) {
     gen.seed(rd());
 
     split_encoded(split);
@@ -298,7 +304,7 @@ void LLM::train(size_t max_tokens, size_t eval_interval, size_t mini_batch_size,
             check = true;
         }
 
-        nn.update_adamw(train_data, train_labels, lr, beta1, beta2, epsilon, weight_decay);
+        nn.update_adamw(train_data, train_labels, lr, beta1, beta2, weight_decay);
         float percent_complete = std::min<float>((static_cast<float>(num_tokens % eval_interval) /
                                                   static_cast<float>(eval_interval)) * 100, 100.0f);
 
@@ -335,6 +341,25 @@ void LLM::train(size_t max_tokens, size_t eval_interval, size_t mini_batch_size,
 }
 
 
+size_t LLM::sample(const xt::xtensor<float, 3>& activations, size_t batch, size_t idx) {
+    gen.seed(rd());
+    std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+
+    float r = dist(gen);
+    float sum = 0.0f;
+
+    size_t best = 0;
+
+    for (size_t i = 0; i < vocab_size; i++) {
+        sum += activations(batch, idx, i);
+        if (sum >= r) {
+            best = i;
+            break;
+        }
+    }
+
+    return best;
+}
 
 
 void LLM::run() {
@@ -354,16 +379,9 @@ void LLM::run() {
 
         while (curr_seq_len < max_seq_len) {
 
-            xt::xtensor<float, 3> activations = nn.feedforward(tensor_inputs, true);
+            xt::xtensor<float, 3> activations = nn.feedforward(tensor_inputs, Mode::INFERENCE);
 
-            float best_prob = 0;
-            size_t best = 0;
-            for (int i = 0; i < vocab_size; i++) {
-                if (activations(0, curr_seq_len - 1, i) >= best_prob) {
-                    best_prob = activations(0, curr_seq_len - 1, i);
-                    best = i;
-                }
-            }
+            size_t best = sample(activations, 0, curr_seq_len - 1);
 
             tensor_inputs(0, curr_seq_len) = static_cast<float>(best);
             std::cout << decode_map[best] << std::flush;
@@ -389,17 +407,10 @@ void LLM::gen_file(std::string file_name, size_t num_tokens) {
     size_t curr_seq_len = 1;
 
     while (curr_seq_len < num_tokens) {
-        xt::xtensor<float, 3> activations = nn.feedforward(tensor_inputs, true);
-        float best_prob = 0;
-        size_t best = 0;
-        size_t ind = std::min(curr_seq_len, max_seq_len) - 1;
+        xt::xtensor<float, 3> activations = nn.feedforward(tensor_inputs, Mode::INFERENCE);
+        size_t idx = std::min(curr_seq_len, max_seq_len) - 1;
 
-        for (int i = 0; i < vocab_size; i++) {
-            if (activations(0, ind, i) >= best_prob) {
-                best_prob = activations(0, ind, i);
-                best = i;
-            }
-        }
+        size_t best = sample(activations, 0, idx);
 
         if (curr_seq_len >= max_seq_len) {
             for (int i = 0; i < max_seq_len - 1; i++) {
@@ -407,7 +418,7 @@ void LLM::gen_file(std::string file_name, size_t num_tokens) {
             }
         }
 
-        tensor_inputs(0, ind) = static_cast<float>(best);
+        tensor_inputs(0, idx) = static_cast<float>(best);
         curr_seq_len++;
 
         file << decode_map[best];

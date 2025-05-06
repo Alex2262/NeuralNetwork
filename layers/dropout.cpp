@@ -12,8 +12,8 @@ Dropout::Dropout(const std::vector<size_t>& p_input_size, float p_dropout_rate) 
 }
 
 
-xt::xarray<float> Dropout::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
-    if (evaluation_mode) {
+xt::xarray<float> Dropout::feedforward(const xt::xarray<float>& inputs, Mode mode) {
+    if (mode != Mode::TRAINING) {
         mask = xt::ones_like(inputs);
         outputs = inputs;
         return outputs;

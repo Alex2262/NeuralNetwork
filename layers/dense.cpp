@@ -39,7 +39,7 @@ Dense::Dense(const std::vector<std::size_t>& p_input_size, size_t p_num_neurons,
     num_params = out_neurons * inp_neurons + out_neurons;
 }
 
-xt::xarray<float> Dense::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
+xt::xarray<float> Dense::feedforward(const xt::xarray<float>& inputs, Mode mode) {
     assert(inputs.shape().back() == inp_neurons);
 
     input_activations = inputs;
@@ -83,16 +83,16 @@ void Dense::update(float lr) {
     grad_biases.fill(0);
 }
 
-void Dense::update_adam(float lr, float beta1, float beta2, float epsilon) {
+void Dense::update_adam(float lr, float beta1, float beta2) {
     timestep++;
 
-    update_adam_2d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, epsilon, timestep);
-    update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, epsilon, timestep);
+    update_adam_2d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, timestep);
+    update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, timestep);
 }
 
-void Dense::update_adamw(float lr, float beta1, float beta2, float epsilon, float weight_decay) {
+void Dense::update_adamw(float lr, float beta1, float beta2, float weight_decay) {
     timestep++;
 
-    update_adamw_2d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, epsilon, weight_decay, timestep);
-    update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, epsilon, timestep);  // no weight decay for biases
+    update_adamw_2d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, weight_decay, timestep);
+    update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, timestep);  // no weight decay for biases
 }

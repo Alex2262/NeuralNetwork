@@ -46,7 +46,7 @@ Convolution::Convolution(std::vector<size_t>& p_input_size, size_t p_num_filters
 }
 
 
-xt::xarray<float> Convolution::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
+xt::xarray<float> Convolution::feedforward(const xt::xarray<float>& inputs, Mode mode) {
     input_activations = inputs;
     size_t batch_size = input_activations.shape()[0];
 
@@ -152,16 +152,16 @@ void Convolution::update(float lr) {
     grad_biases.fill(0);
 }
 
-void Convolution::update_adam(float lr, float beta1, float beta2, float epsilon) {
+void Convolution::update_adam(float lr, float beta1, float beta2) {
     timestep++;
 
-    update_adam_4d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, epsilon, timestep);
-    update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, epsilon, timestep);
+    update_adam_4d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, timestep);
+    update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, timestep);
 }
 
-void Convolution::update_adamw(float lr, float beta1, float beta2, float epsilon, float weight_decay) {
+void Convolution::update_adamw(float lr, float beta1, float beta2, float weight_decay) {
     timestep++;
 
-    update_adamw_4d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, epsilon, weight_decay, timestep);
-    update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, epsilon, timestep);
+    update_adamw_4d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, weight_decay, timestep);
+    update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, timestep);
 }

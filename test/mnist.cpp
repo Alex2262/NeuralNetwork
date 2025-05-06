@@ -197,7 +197,7 @@ void test_mnist() {
      */
 
     // nn.SGD(train_images, train_labels, test_images, test_labels, 6, 64, 0.1);
-    nn.Adam(train_images, train_labels, test_images, test_labels, 10, 64, 0.001, 0.9, 0.999, 1e-9);
+    nn.Adam(train_images, train_labels, test_images, test_labels, 10, 64, 0.001, 0.9, 0.999);
     show_images(nn, train_images, train_labels);
 }
 
@@ -238,7 +238,7 @@ void test_mnist_cnn() {
     // 97.8% accuracy with Convolution(64, 5, 1 RELU) --> Maxpool(2, 2) --> Flatten --> Dense(256, RELU) --> Dense(10, SOFTMAX);
 
     // nn.SGD(train_images, train_labels, test_images, test_labels, 10, 64, 0.02);
-    nn.Adam(train_images, train_labels, test_images, test_labels, 15, 64, 0.001, 0.9, 0.999, 1e-9);
+    nn.Adam(train_images, train_labels, test_images, test_labels, 15, 64, 0.001, 0.9, 0.999);
 }
 
 
@@ -258,7 +258,7 @@ void show_images(NeuralNetwork& nn,
 
         xt::xarray<float> sample = convert_vec_inputs(vec_sample);
 
-        xt::xarray<float> pred = nn.feedforward(sample, true);
+        xt::xarray<float> pred = nn.feedforward(sample, Mode::INFERENCE);
 
         int best = 0;
         float mx = 0;

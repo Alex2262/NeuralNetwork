@@ -24,7 +24,7 @@ public:
 
     Layer* get_layer(size_t index);
 
-    xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode);
+    xt::xarray<float> feedforward(const xt::xarray<float>& inputs, Mode mode);
 
     void backprop(const xt::xarray<float>& inputs, const xt::xarray<float>& labels);
 
@@ -34,11 +34,11 @@ public:
 
     void update_adam(const xt::xarray<float>& inputs,
                      const xt::xarray<float>& labels,
-                     float lr, float beta1, float beta2, float epsilon);
+                     float lr, float beta1, float beta2);
 
     void update_adamw(const xt::xarray<float>& inputs,
                       const xt::xarray<float>& labels,
-                      float lr, float beta1, float beta2, float epsilon, float weight_decay);
+                      float lr, float beta1, float beta2, float weight_decay);
 
     float evaluate(const xt::xarray<float>& inputs, const xt::xarray<float>& labels);
     float loss(const xt::xarray<float>& inputs, const xt::xarray<float>& labels);
@@ -53,13 +53,13 @@ public:
               const std::vector<xt::xarray<float>>& training_labels,
               const std::vector<xt::xarray<float>>& test_inputs,
               const std::vector<xt::xarray<float>>& test_labels,
-              size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2, float epsilon);
+              size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2);
 
     void AdamW(const std::vector<xt::xarray<float>>& training_inputs,
                const std::vector<xt::xarray<float>>& training_labels,
                const std::vector<xt::xarray<float>>& test_inputs,
                const std::vector<xt::xarray<float>>& test_labels,
-               size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2, float epsilon, float weight_decay);
+               size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2, float weight_decay);
 
     template <typename LayerType, typename... Args>
     void add_layer(Args&&... args) {

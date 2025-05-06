@@ -31,7 +31,7 @@ Embedding::Embedding(const std::vector<size_t>& p_input_size, size_t p_vocab_siz
     num_params = vocab_size * d_model + max_seq_len * d_model;
 }
 
-xt::xarray<float> Embedding::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
+xt::xarray<float> Embedding::feedforward(const xt::xarray<float>& inputs, Mode mode) {
     input_activation = inputs;
     size_t batch_size = input_activation.shape()[0];
     size_t seq_len = input_activation.shape()[1];
@@ -87,13 +87,13 @@ void Embedding::update(float lr) {
     grad_positional_matrix.fill(0);
 }
 
-void Embedding::update_adam(float lr, float beta1, float beta2, float epsilon) {
+void Embedding::update_adam(float lr, float beta1, float beta2) {
     timestep++;
 
-    update_adam_2d(embedding_matrix, grad_embedding_matrix, m_embedding_matrix, v_embedding_matrix, lr, beta1, beta2, epsilon, timestep);
-    update_adam_2d(positional_matrix, grad_positional_matrix, m_positional_matrix, v_positional_matrix, lr, beta1, beta2, epsilon, timestep);
+    update_adam_2d(embedding_matrix, grad_embedding_matrix, m_embedding_matrix, v_embedding_matrix, lr, beta1, beta2, timestep);
+    update_adam_2d(positional_matrix, grad_positional_matrix, m_positional_matrix, v_positional_matrix, lr, beta1, beta2, timestep);
 }
 
-void Embedding::update_adamw(float lr, float beta1, float beta2, float epsilon, float weight_decay) {
-    update_adam(lr, beta1, beta2, epsilon);
+void Embedding::update_adamw(float lr, float beta1, float beta2, float weight_decay) {
+    update_adam(lr, beta1, beta2);
 }

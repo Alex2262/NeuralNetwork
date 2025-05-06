@@ -30,7 +30,7 @@ Normalize::Normalize(const std::vector<size_t>& p_input_size) {
     num_params = feature_size + feature_size;
 }
 
-xt::xarray<float> Normalize::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
+xt::xarray<float> Normalize::feedforward(const xt::xarray<float>& inputs, Mode mode) {
     assert(inputs.shape().back() == feature_size);
 
     input_activations = inputs;
@@ -81,13 +81,13 @@ void Normalize::update(float lr) {
     grad_beta.fill(0);
 }
 
-void Normalize::update_adam(float lr, float beta1, float beta2, float epsilon) {
+void Normalize::update_adam(float lr, float beta1, float beta2) {
     timestep++;
 
-    update_adam_1d(gamma, grad_gamma, m_gamma, v_gamma, lr, beta1, beta2, epsilon, timestep);
-    update_adam_1d(beta, grad_beta, m_beta, v_beta, lr, beta1, beta2, epsilon, timestep);
+    update_adam_1d(gamma, grad_gamma, m_gamma, v_gamma, lr, beta1, beta2, timestep);
+    update_adam_1d(beta, grad_beta, m_beta, v_beta, lr, beta1, beta2, timestep);
 }
 
-void Normalize::update_adamw(float lr, float beta1, float beta2, float epsilon, float weight_decay) {
-    update_adam(lr, beta1, beta2, epsilon);
+void Normalize::update_adamw(float lr, float beta1, float beta2, float weight_decay) {
+    update_adam(lr, beta1, beta2);
 }

@@ -35,13 +35,13 @@ private:
 public:
     Dense(const std::vector<size_t>& p_input_size, size_t p_num_neurons, ActivationID p_activation_id);
 
-    xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) override;
+    xt::xarray<float> feedforward(const xt::xarray<float>& inputs, Mode mode) override;
     xt::xarray<float> backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) override;
 
     std::string get_name() const override { return "Dense"; }
     void update(float lr) override;
-    void update_adam(float lr, float beta1, float beta2, float epsilon) override;
-    void update_adamw(float lr, float beta1, float beta2, float epsilon, float weight_decay) override;
+    void update_adam(float lr, float beta1, float beta2) override;
+    void update_adamw(float lr, float beta1, float beta2, float weight_decay) override;
 
     [[nodiscard]] ActivationID get_activation_id() override { return activation_id; }
     [[nodiscard]] xt::xarray<float> get_outputs() override { return outputs; }

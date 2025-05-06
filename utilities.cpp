@@ -188,7 +188,7 @@ void set_3d(xt::xtensor<float, 3>& inputs, xt::xtensor<float, 2>& value, size_t 
 
 void update_adam_1d(xt::xtensor<float, 1>& weights, xt::xtensor<float, 1>& grad_weights,
                     xt::xtensor<float, 1>& m_weights, xt::xtensor<float, 1>& v_weights,
-                    float lr, float beta1, float beta2, float epsilon, size_t timestep) {
+                    float lr, float beta1, float beta2, size_t timestep) {
     assert(weights.shape() == grad_weights.shape() && grad_weights.shape() == m_weights.shape() && m_weights.shape() == v_weights.shape());
 
     m_weights = beta1 * m_weights + (1.0f - beta1) * grad_weights;
@@ -197,14 +197,14 @@ void update_adam_1d(xt::xtensor<float, 1>& weights, xt::xtensor<float, 1>& grad_
     xt::xtensor<float, 1> m_hat_w = m_weights / (1.0f - std::pow(beta1, timestep));
     xt::xtensor<float, 1> v_hat_w = v_weights / (1.0f - std::pow(beta2, timestep));
 
-    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + epsilon);
+    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + EPSILON);
 
     grad_weights.fill(0);
 }
 
 void update_adam_2d(xt::xtensor<float, 2>& weights, xt::xtensor<float, 2>& grad_weights,
                     xt::xtensor<float, 2>& m_weights, xt::xtensor<float, 2>& v_weights,
-                    float lr, float beta1, float beta2, float epsilon, size_t timestep) {
+                    float lr, float beta1, float beta2, size_t timestep) {
     assert(weights.shape() == grad_weights.shape() && grad_weights.shape() == m_weights.shape() && m_weights.shape() == v_weights.shape());
 
     m_weights = beta1 * m_weights + (1.0f - beta1) * grad_weights;
@@ -213,14 +213,14 @@ void update_adam_2d(xt::xtensor<float, 2>& weights, xt::xtensor<float, 2>& grad_
     xt::xtensor<float, 2> m_hat_w = m_weights / (1.0f - std::pow(beta1, timestep));
     xt::xtensor<float, 2> v_hat_w = v_weights / (1.0f - std::pow(beta2, timestep));
 
-    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + epsilon);
+    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + EPSILON);
 
     grad_weights.fill(0);
 }
 
 void update_adam_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad_weights,
                     xt::xtensor<float, 4>& m_weights, xt::xtensor<float, 4>& v_weights,
-                    float lr, float beta1, float beta2, float epsilon, size_t timestep) {
+                    float lr, float beta1, float beta2, size_t timestep) {
     assert(weights.shape() == grad_weights.shape() && grad_weights.shape() == m_weights.shape() && m_weights.shape() == v_weights.shape());
 
     m_weights = beta1 * m_weights + (1.0f - beta1) * grad_weights;
@@ -229,7 +229,7 @@ void update_adam_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad_
     xt::xtensor<float, 4> m_hat_w = m_weights / (1.0f - std::pow(beta1, timestep));
     xt::xtensor<float, 4> v_hat_w = v_weights / (1.0f - std::pow(beta2, timestep));
 
-    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + epsilon);
+    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + EPSILON);
 
     grad_weights.fill(0);
 }
@@ -237,7 +237,7 @@ void update_adam_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad_
 
 void update_adamw_1d(xt::xtensor<float, 1>& weights, xt::xtensor<float, 1>& grad_weights,
                      xt::xtensor<float, 1>& m_weights, xt::xtensor<float, 1>& v_weights,
-                     float lr, float beta1, float beta2, float epsilon, float weight_decay, size_t timestep) {
+                     float lr, float beta1, float beta2, float weight_decay, size_t timestep) {
 
     assert(weights.shape() == grad_weights.shape() && grad_weights.shape() == m_weights.shape() && m_weights.shape() == v_weights.shape());
 
@@ -248,14 +248,14 @@ void update_adamw_1d(xt::xtensor<float, 1>& weights, xt::xtensor<float, 1>& grad
     xt::xtensor<float, 1> v_hat_w = v_weights / (1.0f - std::pow(beta2, timestep));
 
     weights *= (1.0f - lr * weight_decay);
-    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + epsilon);
+    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + EPSILON);
 
     grad_weights.fill(0);
 }
 
 void update_adamw_2d(xt::xtensor<float, 2>& weights, xt::xtensor<float, 2>& grad_weights,
                     xt::xtensor<float, 2>& m_weights, xt::xtensor<float, 2>& v_weights,
-                    float lr, float beta1, float beta2, float epsilon, float weight_decay, size_t timestep) {
+                    float lr, float beta1, float beta2, float weight_decay, size_t timestep) {
     assert(weights.shape() == grad_weights.shape() && grad_weights.shape() == m_weights.shape() && m_weights.shape() == v_weights.shape());
 
     m_weights = beta1 * m_weights + (1.0f - beta1) * grad_weights;
@@ -265,14 +265,14 @@ void update_adamw_2d(xt::xtensor<float, 2>& weights, xt::xtensor<float, 2>& grad
     xt::xtensor<float, 2> v_hat_w = v_weights / (1.0f - std::pow(beta2, timestep));
 
     weights *= (1.0f - lr * weight_decay);
-    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + epsilon);
+    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + EPSILON);
 
     grad_weights.fill(0);
 }
 
 void update_adamw_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad_weights,
                     xt::xtensor<float, 4>& m_weights, xt::xtensor<float, 4>& v_weights,
-                    float lr, float beta1, float beta2, float epsilon, float weight_decay, size_t timestep) {
+                    float lr, float beta1, float beta2, float weight_decay, size_t timestep) {
     assert(weights.shape() == grad_weights.shape() && grad_weights.shape() == m_weights.shape() && m_weights.shape() == v_weights.shape());
 
     m_weights = beta1 * m_weights + (1.0f - beta1) * grad_weights;
@@ -282,7 +282,7 @@ void update_adamw_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad
     xt::xtensor<float, 4> v_hat_w = v_weights / (1.0f - std::pow(beta2, timestep));
 
     weights *= (1.0f - lr * weight_decay);
-    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + epsilon);
+    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + EPSILON);
 
     grad_weights.fill(0);
 }
