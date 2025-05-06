@@ -8,6 +8,7 @@
 NeuralNetwork::NeuralNetwork(std::vector<size_t> p_input_size, CostID p_cost_id) {
     input_size = p_input_size;
     cost_id = p_cost_id;
+    num_params = 0;
 }
 
 Layer* NeuralNetwork::get_layer(size_t index) {
@@ -28,22 +29,6 @@ void NeuralNetwork::backprop(const xt::xarray<float>& inputs, const xt::xarray<f
     xt::xarray<float> activation = feedforward(inputs, false);
     xt::xarray<float> output = layers.back()->get_outputs();
     xt::xarray<float> delta = get_output_error(output, activation, labels, layers.back()->get_activation_id(), cost_id);
-
-    /*
-    print_shape(activation.shape());
-
-    xt::xtensor<float, 2> act = xt::reshape_view(activation, {activation.shape()[0] * activation.shape()[1], activation.shape()[2]});
-    xt::xarray<size_t> pred = xt::argmax(act, 1);
-    for (int i = 0; i < act.shape()[0]; i++) {
-        std::string s;
-        for (int j = 0; j < act.shape()[1]; j++) {
-            s += std::to_string(act(i, j)) + " ";
-        }
-
-        std::cout << s << std::endl;
-        std::cout << "PRED " << pred[i] << std::endl;
-    }
-     */
 
     for (int i = static_cast<int>(layers.size() - 1); i >= 0; i--) {
         delta = layers[i]->backprop(delta, i != layers.size() - 1);
@@ -67,6 +52,16 @@ void NeuralNetwork::update_adam(const xt::xarray<float>& inputs,
 
     for (std::unique_ptr<Layer>& layer : layers) {
         layer->update_adam(lr, beta1, beta2, epsilon);
+    }
+}
+
+void NeuralNetwork::update_adamw(const xt::xarray<float>& inputs,
+                                 const xt::xarray<float>& labels,
+                                 float lr, float beta1, float beta2, float epsilon, float weight_decay) {
+    backprop(inputs, labels);
+
+    for (std::unique_ptr<Layer>& layer : layers) {
+        layer->update_adamw(lr, beta1, beta2, epsilon, weight_decay);
     }
 }
 
@@ -186,6 +181,74 @@ void NeuralNetwork::Adam(const std::vector<xt::xarray<float>>& training_inputs,
                          const std::vector<xt::xarray<float>>& test_inputs,
                          const std::vector<xt::xarray<float>>& test_labels,
                          size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2, float epsilon) {
+
+    auto conv_test_inputs = convert_vec_inputs(test_inputs);
+    auto conv_test_labels = convert_vec_inputs(test_labels);
+
+    size_t n = training_inputs.size();
+
+    std::random_device rd;
+    std::mt19937 g(rd());
+
+    std::vector<size_t> indices(n);
+    std::iota(indices.begin(), indices.end(), 0);
+
+    for (int epoch = 0; epoch < epochs; epoch++) {
+        auto start_time = std::chrono::high_resolution_clock::now();
+        std::shuffle(indices.begin(), indices.end(), g);
+
+        size_t num_batches = (n + mini_batch_size - 1) / mini_batch_size;
+
+        for (size_t batch_index = 0; batch_index < num_batches; batch_index++) {
+            std::vector<xt::xarray<float>> batch_inputs;
+            std::vector<xt::xarray<float>> batch_labels;
+
+            size_t start = batch_index * mini_batch_size;
+            size_t end = std::min(start + mini_batch_size, n);
+
+            for (size_t i = start; i < end; i++) {
+                size_t idx = indices[i];
+                batch_inputs.push_back(training_inputs[idx]);
+                batch_labels.push_back(training_labels[idx]);
+            }
+
+            xt::xarray<float> inputs = convert_vec_inputs(batch_inputs);
+            xt::xarray<float> labels = convert_vec_inputs(batch_labels);
+
+            update_adam(inputs, labels, lr, beta1, beta2, epsilon);
+
+            auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(
+                    std::chrono::high_resolution_clock::now() - start_time
+            ).count();
+
+            float avg_time_per_batch = static_cast<float>(elapsed_time) / static_cast<float>(batch_index + 1);
+            int remaining_batches = static_cast<int>(num_batches - (batch_index + 1));
+            int estimated_remaining_time = static_cast<int>(static_cast<float>(remaining_batches) * avg_time_per_batch);
+
+            int minutes = estimated_remaining_time / 60;
+            int seconds = estimated_remaining_time % 60;
+
+            float percent_complete = (static_cast<float>(batch_index + 1) /
+                                      static_cast<float>(num_batches)) * 100;
+
+            std::cout << "\rEpoch #" << (epoch + 1)
+                      << " progress: " << std::fixed << std::setprecision(4) << percent_complete << "% complete | "
+                      << "Estimated time remaining: " << minutes << ":" << (seconds < 10 ? "0" : "") << seconds;
+
+            std::fflush(stdout);
+        }
+
+        float current_accuracy = evaluate(conv_test_inputs, conv_test_labels);
+
+        std::cout << "\rEpoch #" << (epoch + 1) << " | Accuracy: " << current_accuracy << std::endl;
+    }
+}
+
+void NeuralNetwork::AdamW(const std::vector<xt::xarray<float>>& training_inputs,
+                          const std::vector<xt::xarray<float>>& training_labels,
+                          const std::vector<xt::xarray<float>>& test_inputs,
+                          const std::vector<xt::xarray<float>>& test_labels,
+                          size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2, float epsilon, float weight_decay) {
 
     auto conv_test_inputs = convert_vec_inputs(test_inputs);
     auto conv_test_labels = convert_vec_inputs(test_labels);

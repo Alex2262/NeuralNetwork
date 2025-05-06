@@ -30,6 +30,7 @@ private:
     size_t dense_neurons;
     size_t vocab_size;
     size_t training_data_size;
+    size_t test_data_size;
 
     float dropout_rate;
 
@@ -62,9 +63,11 @@ private:
 public:
     LLM(size_t p_num_layers, size_t p_num_heads, size_t p_max_seq_len, size_t p_d_model, float p_dropout_rate, std::vector<std::string>& p_file_names);
 
-    void train(size_t max_tokens, size_t eval_interval, size_t mini_batch_size, float split, float lr, float beta1, float beta2, float epsilon);
+    void train(size_t max_tokens, size_t eval_interval, size_t mini_batch_size, float split, float lr, float beta1, float beta2, float epsilon, float weight_decay);
 
     void run();
+
+    void gen_file(std::string file_name, size_t num_tokens);
 
 };
 

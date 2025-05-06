@@ -27,6 +27,8 @@ Embedding::Embedding(const std::vector<size_t>& p_input_size, size_t p_vocab_siz
     v_positional_matrix = xt::zeros_like(positional_matrix);
 
     timestep = 0;
+
+    num_params = vocab_size * d_model + max_seq_len * d_model;
 }
 
 xt::xarray<float> Embedding::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
@@ -90,4 +92,8 @@ void Embedding::update_adam(float lr, float beta1, float beta2, float epsilon) {
 
     update_adam_2d(embedding_matrix, grad_embedding_matrix, m_embedding_matrix, v_embedding_matrix, lr, beta1, beta2, epsilon, timestep);
     update_adam_2d(positional_matrix, grad_positional_matrix, m_positional_matrix, v_positional_matrix, lr, beta1, beta2, epsilon, timestep);
+}
+
+void Embedding::update_adamw(float lr, float beta1, float beta2, float epsilon, float weight_decay) {
+    update_adam(lr, beta1, beta2, epsilon);
 }

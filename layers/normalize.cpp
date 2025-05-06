@@ -26,6 +26,8 @@ Normalize::Normalize(const std::vector<size_t>& p_input_size) {
     v_beta = xt::zeros_like(beta);
 
     timestep = 0;
+
+    num_params = feature_size + feature_size;
 }
 
 xt::xarray<float> Normalize::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
@@ -84,4 +86,8 @@ void Normalize::update_adam(float lr, float beta1, float beta2, float epsilon) {
 
     update_adam_1d(gamma, grad_gamma, m_gamma, v_gamma, lr, beta1, beta2, epsilon, timestep);
     update_adam_1d(beta, grad_beta, m_beta, v_beta, lr, beta1, beta2, epsilon, timestep);
+}
+
+void Normalize::update_adamw(float lr, float beta1, float beta2, float epsilon, float weight_decay) {
+    update_adam(lr, beta1, beta2, epsilon);
 }

@@ -178,11 +178,13 @@ LLM::LLM(size_t p_num_layers, size_t p_num_heads, size_t p_max_seq_len, size_t p
     nn.add_layer<Projection>(embedding_layer, ActivationID::SOFTMAX);
 
     std::cout << "LLM Initialization Complete" << std::endl;
+    std::cout << "# params: " << nn.get_num_params() << std::endl;
 }
 
 
 void LLM::split_encoded(float split) {
     training_data_size = 0;
+    test_data_size = 0;
 
     auto amt = static_cast<size_t>(static_cast<float>(all_encoded.size()) * split);
 
@@ -192,10 +194,12 @@ void LLM::split_encoded(float split) {
     }
 
     for (size_t i = amt; i < all_encoded.size(); i++) {
+        test_data_size++;
         test_encoded.push_back(all_encoded[i]);
     }
 
     std::cout << "Training Data Size: " << training_data_size << std::endl;
+    std::cout << "Test Data Size: " << test_data_size << std::endl;
 }
 
 std::pair<xt::xtensor<float, 2>, xt::xtensor<float, 3>> LLM::index_test_batch(size_t batch_size, size_t ind) {
@@ -272,7 +276,7 @@ std::pair<xt::xtensor<float, 2>, xt::xtensor<float, 3>> LLM::get_random_batch(si
 }
 
 
-void LLM::train(size_t max_tokens, size_t eval_interval, size_t mini_batch_size, float split, float lr, float beta1, float beta2, float epsilon) {
+void LLM::train(size_t max_tokens, size_t eval_interval, size_t mini_batch_size, float split, float lr, float beta1, float beta2, float epsilon, float weight_decay) {
     gen.seed(rd());
 
     split_encoded(split);
@@ -280,30 +284,52 @@ void LLM::train(size_t max_tokens, size_t eval_interval, size_t mini_batch_size,
     size_t num_tokens = 0;
     size_t prev_tokens = 0;
 
+    auto start_time = std::chrono::high_resolution_clock::now();
+    float sum_eval_time = 0;
+    size_t num_evals = 0;
+
     while (num_tokens < max_tokens) {
         prev_tokens = num_tokens;
         num_tokens += mini_batch_size * max_seq_len;
         auto [train_data, train_labels] = get_random_batch(mini_batch_size);
 
         bool check = false;
-        if (num_tokens % eval_interval < prev_tokens % eval_interval) {
+        if (num_tokens % eval_interval <= prev_tokens % eval_interval) {
             check = true;
         }
 
-        nn.update_adam(train_data, train_labels, lr, beta1, beta2, epsilon);
-        float percent_complete = (static_cast<float>(num_tokens % eval_interval) /
-                                  static_cast<float>(eval_interval)) * 100;
+        nn.update_adamw(train_data, train_labels, lr, beta1, beta2, epsilon, weight_decay);
+        float percent_complete = std::min<float>((static_cast<float>(num_tokens % eval_interval) /
+                                                  static_cast<float>(eval_interval)) * 100, 100.0f);
 
         if (check) percent_complete = 100;
 
-        std::cout << "\rToken #" << num_tokens << " | progress: " << std::fixed << std::setprecision(4) << percent_complete << "% complete";
-        std::fflush(stdout);
+        auto curr = std::chrono::high_resolution_clock::now();
+
+        float elapsed_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(curr - start_time).count()) / 1000.0f;
+        float avg_token_time = (elapsed_time - sum_eval_time) / static_cast<float>(num_tokens);
+        float expected_eval_time = num_evals == 0 ? (0.5f * avg_token_time * static_cast<float>(test_data_size)) : (sum_eval_time / static_cast<float>(num_evals));
+        float remaining_interval_time = expected_eval_time + (check ? 0 : (avg_token_time * static_cast<float>(eval_interval - num_tokens % eval_interval)));
+        size_t expected_intervals = ceil(static_cast<float>(max_tokens - num_tokens) / static_cast<float>(eval_interval));
+        float remaining_total_time = avg_token_time * static_cast<float>(max_tokens - num_tokens) + expected_eval_time * static_cast<float>(expected_intervals);
+
+        std::cout << "\rToken #" << num_tokens
+                  << " | Progress: " << std::fixed << std::setprecision(4) << percent_complete << "% complete"
+                  << " | Elapsed: "  << format_time(static_cast<size_t>(elapsed_time))
+                  << " | Remaining Interval Time: " << format_time(static_cast<size_t>(remaining_interval_time))
+                  << " | Remaining Total Time: " << format_time(static_cast<size_t>(remaining_total_time))
+                  << std::flush;
 
         if (check) {
+            auto eval_start_time   = std::chrono::high_resolution_clock::now();
             float current_accuracy = batched_evaluate(mini_batch_size);
             float current_loss     = batched_loss(mini_batch_size);
+            auto eval_end_time     = std::chrono::high_resolution_clock::now();
+            float eval_elapsed_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(eval_end_time - eval_start_time).count()) / 1000.0f;
+            sum_eval_time += eval_elapsed_time;
+            num_evals++;
+
             std::cout << "\rToken #" << num_tokens << " | Accuracy: " << current_accuracy << " | Loss: " << current_loss << std::endl;
-            std::fflush(stdout);
         }
     }
 }
@@ -346,4 +372,53 @@ void LLM::run() {
 
         std::cout << std::endl;
     }
+}
+
+
+void LLM::gen_file(std::string file_name, size_t num_tokens) {
+    std::ofstream file;
+
+    file.open(file_name);
+    if (!file.is_open()) {
+        throw std::runtime_error("Cannot Open File");
+    }
+
+    xt::xtensor<float, 2> tensor_inputs = xt::zeros<float>(std::vector<size_t>{1, max_seq_len});
+
+    tensor_inputs(0, 0) = static_cast<float>(encode_map["\n"]);
+    size_t curr_seq_len = 1;
+
+    while (curr_seq_len < num_tokens) {
+        xt::xtensor<float, 3> activations = nn.feedforward(tensor_inputs, true);
+        float best_prob = 0;
+        size_t best = 0;
+        size_t ind = std::min(curr_seq_len, max_seq_len) - 1;
+
+        for (int i = 0; i < vocab_size; i++) {
+            if (activations(0, ind, i) >= best_prob) {
+                best_prob = activations(0, ind, i);
+                best = i;
+            }
+        }
+
+        if (curr_seq_len >= max_seq_len) {
+            for (int i = 0; i < max_seq_len - 1; i++) {
+                tensor_inputs(0, i) = tensor_inputs(0, i + 1);
+            }
+        }
+
+        tensor_inputs(0, ind) = static_cast<float>(best);
+        curr_seq_len++;
+
+        file << decode_map[best];
+
+        float percent = static_cast<float>(curr_seq_len) / static_cast<float>(num_tokens) * 100;
+
+        std::cout << "\rPercent Written: " << std::fixed << std::setprecision(4) << percent << std::flush;
+    }
+
+    file << std::endl;
+    std::cout << std::endl;
+
+    file.close();
 }

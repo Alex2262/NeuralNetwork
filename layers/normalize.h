@@ -9,6 +9,7 @@
 class Normalize : public Layer {
 private:
     size_t feature_size;
+    size_t num_params;
 
     float eps = 1e-9;
 
@@ -38,12 +39,14 @@ public:
     std::string get_name() const override { return "Normalize"; }
     void update(float lr) override;
     void update_adam(float lr, float beta1, float beta2, float epsilon) override;
+    void update_adamw(float lr, float beta1, float beta2, float epsilon, float weight_decay) override;
 
     [[nodiscard]] ActivationID get_activation_id() override { return ActivationID::NONE; }
     [[nodiscard]] xt::xarray<float> get_outputs() override { return outputs; }
     [[nodiscard]] xt::xarray<float> get_activations() override { return outputs; }
     [[nodiscard]] std::vector<size_t> get_input_size() const override { return input_size; }
     [[nodiscard]] std::vector<size_t> get_output_size() const override { return output_size; }
+    [[nodiscard]] size_t get_num_params() const override { return num_params; }
 };
 
 

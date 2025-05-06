@@ -42,6 +42,8 @@ Attention::Attention(const std::vector<size_t>& p_input_size, size_t p_num_heads
     v_weights_o = xt::zeros_like(weights_o);
 
     timestep = 0;
+
+    num_params = 4 * d_model * d_model;
 }
 
 xt::xarray<float> Attention::feedforward(const xt::xarray<float>& inputs, bool evaluation_mode) {
@@ -172,4 +174,13 @@ void Attention::update_adam(float lr, float beta1, float beta2, float epsilon) {
     update_adam_2d(weights_k, grad_weights_k, m_weights_k, v_weights_k, lr, beta1, beta2, epsilon, timestep);
     update_adam_2d(weights_v, grad_weights_v, m_weights_v, v_weights_v, lr, beta1, beta2, epsilon, timestep);
     update_adam_2d(weights_o, grad_weights_o, m_weights_o, v_weights_o, lr, beta1, beta2, epsilon, timestep);
+}
+
+void Attention::update_adamw(float lr, float beta1, float beta2, float epsilon, float weight_decay) {
+    timestep++;
+
+    update_adamw_2d(weights_q, grad_weights_q, m_weights_q, v_weights_q, lr, beta1, beta2, epsilon, weight_decay, timestep);
+    update_adamw_2d(weights_k, grad_weights_k, m_weights_k, v_weights_k, lr, beta1, beta2, epsilon, weight_decay, timestep);
+    update_adamw_2d(weights_v, grad_weights_v, m_weights_v, v_weights_v, lr, beta1, beta2, epsilon, weight_decay, timestep);
+    update_adamw_2d(weights_o, grad_weights_o, m_weights_o, v_weights_o, lr, beta1, beta2, epsilon, weight_decay, timestep);
 }

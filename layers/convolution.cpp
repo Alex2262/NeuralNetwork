@@ -41,6 +41,8 @@ Convolution::Convolution(std::vector<size_t>& p_input_size, size_t p_num_filters
 
     activation_function = get_activation_function(activation_id);
     activation_derivative = get_activation_derivative(activation_id);
+
+    num_params = num_filters * filter_size * filter_size * input_size[2] + num_filters;
 }
 
 
@@ -154,5 +156,12 @@ void Convolution::update_adam(float lr, float beta1, float beta2, float epsilon)
     timestep++;
 
     update_adam_4d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, epsilon, timestep);
+    update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, epsilon, timestep);
+}
+
+void Convolution::update_adamw(float lr, float beta1, float beta2, float epsilon, float weight_decay) {
+    timestep++;
+
+    update_adamw_4d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, epsilon, weight_decay, timestep);
     update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, epsilon, timestep);
 }

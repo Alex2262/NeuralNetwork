@@ -235,6 +235,59 @@ void update_adam_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad_
 }
 
 
+void update_adamw_1d(xt::xtensor<float, 1>& weights, xt::xtensor<float, 1>& grad_weights,
+                     xt::xtensor<float, 1>& m_weights, xt::xtensor<float, 1>& v_weights,
+                     float lr, float beta1, float beta2, float epsilon, float weight_decay, size_t timestep) {
+
+    assert(weights.shape() == grad_weights.shape() && grad_weights.shape() == m_weights.shape() && m_weights.shape() == v_weights.shape());
+
+    m_weights = beta1 * m_weights + (1.0f - beta1) * grad_weights;
+    v_weights = beta2 * v_weights + (1.0f - beta2) * xt::square(grad_weights);
+
+    xt::xtensor<float, 1> m_hat_w = m_weights / (1.0f - std::pow(beta1, timestep));
+    xt::xtensor<float, 1> v_hat_w = v_weights / (1.0f - std::pow(beta2, timestep));
+
+    weights *= (1.0f - lr * weight_decay);
+    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + epsilon);
+
+    grad_weights.fill(0);
+}
+
+void update_adamw_2d(xt::xtensor<float, 2>& weights, xt::xtensor<float, 2>& grad_weights,
+                    xt::xtensor<float, 2>& m_weights, xt::xtensor<float, 2>& v_weights,
+                    float lr, float beta1, float beta2, float epsilon, float weight_decay, size_t timestep) {
+    assert(weights.shape() == grad_weights.shape() && grad_weights.shape() == m_weights.shape() && m_weights.shape() == v_weights.shape());
+
+    m_weights = beta1 * m_weights + (1.0f - beta1) * grad_weights;
+    v_weights = beta2 * v_weights + (1.0f - beta2) * xt::square(grad_weights);
+
+    xt::xtensor<float, 2> m_hat_w = m_weights / (1.0f - std::pow(beta1, timestep));
+    xt::xtensor<float, 2> v_hat_w = v_weights / (1.0f - std::pow(beta2, timestep));
+
+    weights *= (1.0f - lr * weight_decay);
+    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + epsilon);
+
+    grad_weights.fill(0);
+}
+
+void update_adamw_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad_weights,
+                    xt::xtensor<float, 4>& m_weights, xt::xtensor<float, 4>& v_weights,
+                    float lr, float beta1, float beta2, float epsilon, float weight_decay, size_t timestep) {
+    assert(weights.shape() == grad_weights.shape() && grad_weights.shape() == m_weights.shape() && m_weights.shape() == v_weights.shape());
+
+    m_weights = beta1 * m_weights + (1.0f - beta1) * grad_weights;
+    v_weights = beta2 * v_weights + (1.0f - beta2) * xt::square(grad_weights);
+
+    xt::xtensor<float, 4> m_hat_w = m_weights / (1.0f - std::pow(beta1, timestep));
+    xt::xtensor<float, 4> v_hat_w = v_weights / (1.0f - std::pow(beta2, timestep));
+
+    weights *= (1.0f - lr * weight_decay);
+    weights -= lr * m_hat_w / (xt::sqrt(v_hat_w) + epsilon);
+
+    grad_weights.fill(0);
+}
+
+
 void print_2d(xt::xtensor<float, 2>& inp) {
     for (size_t r = 0; r < inp.shape()[0]; r++) {
         std::string s;
@@ -244,4 +297,16 @@ void print_2d(xt::xtensor<float, 2>& inp) {
 
         std::cout << s << std::endl;
     }
+}
+
+std::string format_time(size_t secs) {
+    size_t hours   = secs / 3600;
+    size_t minutes = secs / 60 % 60;
+    size_t seconds = secs % 60;
+
+    std::string s = (hours   < 10 ? "0" : "") + std::to_string(hours  ) + ":"
+                  + (minutes < 10 ? "0" : "") + std::to_string(minutes) + ":"
+                  + (seconds < 10 ? "0" : "") + std::to_string(seconds);
+
+    return s;
 }

@@ -14,10 +14,14 @@ private:
     CostID cost_id;
     std::vector<std::unique_ptr<Layer>> layers;
 
+    size_t num_params;
+
 public:
     NeuralNetwork(std::vector<size_t> p_input_size, CostID p_cost_id);
 
     size_t get_num_layers() { return layers.size(); }
+    size_t get_num_params() { return num_params; }
+
     Layer* get_layer(size_t index);
 
     xt::xarray<float> feedforward(const xt::xarray<float>& inputs, bool evaluation_mode);
@@ -31,6 +35,10 @@ public:
     void update_adam(const xt::xarray<float>& inputs,
                      const xt::xarray<float>& labels,
                      float lr, float beta1, float beta2, float epsilon);
+
+    void update_adamw(const xt::xarray<float>& inputs,
+                      const xt::xarray<float>& labels,
+                      float lr, float beta1, float beta2, float epsilon, float weight_decay);
 
     float evaluate(const xt::xarray<float>& inputs, const xt::xarray<float>& labels);
     float loss(const xt::xarray<float>& inputs, const xt::xarray<float>& labels);
@@ -46,6 +54,12 @@ public:
               const std::vector<xt::xarray<float>>& test_inputs,
               const std::vector<xt::xarray<float>>& test_labels,
               size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2, float epsilon);
+
+    void AdamW(const std::vector<xt::xarray<float>>& training_inputs,
+               const std::vector<xt::xarray<float>>& training_labels,
+               const std::vector<xt::xarray<float>>& test_inputs,
+               const std::vector<xt::xarray<float>>& test_labels,
+               size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2, float epsilon, float weight_decay);
 
     template <typename LayerType, typename... Args>
     void add_layer(Args&&... args) {
@@ -63,6 +77,8 @@ public:
 
         std::cout << "Added " << layers.back()->get_name() << " Layer with input size (" << f_input_size
                   << ") and output size (" << f_output_size << ")" << std::endl;
+
+        num_params += layers.back()->get_num_params();
     }
 };
 
