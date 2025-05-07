@@ -3,18 +3,27 @@ project(NeuralNetwork)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_definitions(-DHAVE_CBLAS=1 -DWITH_OPENBLAS=1 -DXTENSOR_ENABLE_XSIMD=1 -DUSE_XSIMD=1)
 
-set(XTENSOR_USE_XSIMD 1)
-set(LINK_LIBRARIES ${CONAN_LIBS} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} xtensor xtensor::optimize xtensor::use_xsimd)
+
+add_definitions(-DHAVE_CBLAS=1)
+
+#set(XTENSOR_USE_XSIMD 1)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "-march=native -O3 -flto -funroll-loops")
 
 find_library(MATIO_LIB matio HINTS /opt/homebrew/lib /usr/local/lib)
 find_package(OpenCV REQUIRED)
-
 find_package(xtensor CONFIG REQUIRED)
+find_package(BLAS REQUIRED)
+
+if(NOT APPLE)
+    message(STATUS "SIMD enabled (non-macOS)")
+    add_definitions(-DXTENSOR_ENABLE_XSIMD=1)
+    set(XTENSOR_USE_XSIMD ON)
+else()
+    message(STATUS "SIMD disabled on macOS")
+endif()
 
 include_directories(/opt/homebrew/include)
 include_directories(/Users/alexandertian/local_xtensorblas/include)
@@ -57,6 +66,6 @@ add_executable(NeuralNetwork main.cpp
 target_link_libraries(NeuralNetwork
         ${MATIO_LIB}
         ${OpenCV_LIBS}
+        ${BLAS_LIBRARIES}
         xtensor
-        /opt/homebrew/opt/openblas/lib/libopenblas.dylib
 )

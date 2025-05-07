@@ -324,6 +324,7 @@ void LLM::train(size_t max_tokens, size_t eval_interval, size_t mini_batch_size,
                   << " | Elapsed: "  << format_time(static_cast<size_t>(elapsed_time))
                   << " | Remaining Interval Time: " << format_time(static_cast<size_t>(remaining_interval_time))
                   << " | Remaining Total Time: " << format_time(static_cast<size_t>(remaining_total_time))
+                  << " | Avg Interval Time: " << avg_token_time * static_cast<float>(eval_interval)
                   << std::flush;
 
         if (check) {

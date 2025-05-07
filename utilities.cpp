@@ -165,24 +165,27 @@ xt::xarray<float> convert_vec_inputs(const std::vector<xt::xarray<float>>& input
 
 
 xt::xtensor<float, 2> index_3d(xt::xtensor<float, 3>& inputs, size_t index) {
-    xt::xtensor<float, 2> out = xt::zeros<float>({inputs.shape()[1], inputs.shape()[2]});
+    const size_t rows = inputs.shape()[1];
+    const size_t cols = inputs.shape()[2];
 
-    for (size_t i = 0; i < inputs.shape()[1]; i++) {
-        for (size_t j = 0; j < inputs.shape()[2]; j++) {
-            out(i, j) = inputs(index, i, j);
-        }
-    }
+    xt::xtensor<float, 2> out({rows, cols});
+    auto* in_ptr = inputs.data() + index * rows * cols;
+    auto* out_ptr = out.data();
+
+    std::copy(in_ptr, in_ptr + rows * cols, out_ptr);
 
     return out;
 }
 
 
 void set_3d(xt::xtensor<float, 3>& inputs, xt::xtensor<float, 2>& value, size_t index) {
-    for (size_t i = 0; i < inputs.shape()[1]; i++) {
-        for (size_t j = 0; j < inputs.shape()[2]; j++) {
-            inputs(index, i, j) = value(i, j);
-        }
-    }
+    const size_t rows = inputs.shape()[1];
+    const size_t cols = inputs.shape()[2];
+
+    auto* in_ptr = value.data();
+    auto* out_ptr = inputs.data() + index * rows * cols;
+
+    std::copy(in_ptr, in_ptr + rows * cols, out_ptr);
 }
 
 
