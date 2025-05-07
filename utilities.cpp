@@ -2,6 +2,7 @@
 #include <string>
 #include <xtensor/xmath.hpp>
 #include <xtensor/xview.hpp>
+#include <Accelerate/Accelerate.h>
 #include "utilities.h"
 
 xt::xarray<float> no_activation(const xt::xarray<float>& x) {
@@ -312,4 +313,25 @@ std::string format_time(size_t secs) {
                   + (seconds < 10 ? "0" : "") + std::to_string(seconds);
 
     return s;
+}
+
+xt::xtensor<float, 2> fast_dot(const xt::xtensor<float, 2>& A, const xt::xtensor<float, 2>& B) {
+
+    const size_t M = A.shape()[0];
+    const size_t K = A.shape()[1];
+    const size_t N = B.shape()[1];
+
+    assert(K == B.shape()[0]);
+
+    xt::xtensor<float, 2> C = xt::zeros<float>({M, N});
+
+    cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                static_cast<int>(M), static_cast<int>(N), static_cast<int>(K),
+                1.0f,
+                A.data(), static_cast<int>(K),
+                B.data(), static_cast<int>(N),
+                0.0f,
+                C.data(), static_cast<int>(N));
+
+    return C;
 }

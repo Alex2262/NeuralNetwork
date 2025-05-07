@@ -45,7 +45,7 @@ xt::xarray<float> Dense::feedforward(const xt::xarray<float>& inputs, Mode mode)
     input_activations = inputs;
 
     // actual dense layer feedforward
-    outputs = xt::linalg::dot(input_activations, xt::transpose(weights)) + biases;
+    outputs = fast_dot(input_activations, xt::transpose(weights)) + biases;
     activations = activation_function(outputs);
 
     return activations;
@@ -61,13 +61,13 @@ xt::xarray<float> Dense::backprop(const xt::xarray<float>& p_delta, bool calc_de
         delta = delta * activation_derivative(outputs);
     }
 
-    grad_weights += xt::linalg::dot(xt::transpose(delta), input_activations);
+    grad_weights += fast_dot(xt::transpose(delta), input_activations);
     grad_biases += xt::sum(delta, {0});
 
     grad_weights /= batch_size;
     grad_biases /= batch_size;
 
-    delta = xt::linalg::dot(delta, weights);
+    delta = fast_dot(delta, weights);
 
     assert(weights.shape() == grad_weights.shape());
     assert(biases.shape() == grad_biases.shape());

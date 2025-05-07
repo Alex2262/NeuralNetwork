@@ -76,6 +76,8 @@ void print_shape(const Shape& shape) {
 
 void print_2d(xt::xtensor<float, 2>& inp);
 
+xt::xtensor<float, 2> fast_dot(const xt::xtensor<float, 2>& A, const xt::xtensor<float, 2>& B);
+
 
 template <typename Shape>
 std::vector<size_t> unravel_index(size_t flat_index, const Shape& shape) {
