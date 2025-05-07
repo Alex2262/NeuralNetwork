@@ -4,7 +4,7 @@
 #define NEURALNETWORK_MNIST_H
 
 #include <string>
-#include <xtensor/xarray.hpp>
+#include <xtensor/containers/xarray.hpp>
 #include "../neural_network.h"
 
 void load_mnist_data(const std::string& file_path,

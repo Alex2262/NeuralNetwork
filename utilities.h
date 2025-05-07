@@ -4,9 +4,9 @@
 
 #include <numeric>
 #include <functional>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xsort.hpp>
-#include <xtensor/xtensor.hpp>
+#include <xtensor/containers/xarray.hpp>
+#include <xtensor/misc/xsort.hpp>
+#include <xtensor/containers/xtensor.hpp>
 #include "types.h"
 
 xt::xarray<float> no_activation(const xt::xarray<float>& x);

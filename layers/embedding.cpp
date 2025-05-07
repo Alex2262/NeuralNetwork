@@ -1,5 +1,5 @@
 
-#include <xtensor/xrandom.hpp>
+#include <xtensor/generators/xrandom.hpp>
 #include <xtensor-blas/xlinalg.hpp>
 
 #include "embedding.h"

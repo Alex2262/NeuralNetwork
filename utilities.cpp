@@ -1,7 +1,7 @@
 
 #include <string>
-#include <xtensor/xmath.hpp>
-#include <xtensor/xview.hpp>
+#include <xtensor/core/xmath.hpp>
+#include <xtensor/views/xview.hpp>
 #include "utilities.h"
 
 xt::xarray<float> no_activation(const xt::xarray<float>& x) {

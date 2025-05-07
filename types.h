@@ -2,7 +2,7 @@
 #ifndef NEURALNETWORK_TYPES_H
 #define NEURALNETWORK_TYPES_H
 
-#include <xtensor/xarray.hpp>
+#include <xtensor/containers/xarray.hpp>
 #include <functional>
 
 using ActivationFunction = std::function<xt::xarray<float>(const xt::xarray<float>&)>;

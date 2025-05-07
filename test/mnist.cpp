@@ -4,9 +4,7 @@
 #include <vector>
 #include <random>
 #include <opencv2/opencv.hpp>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xview.hpp>
+#include <xtensor/containers/xarray.hpp>
 
 #include "matio.h"
 #include "mnist.h"

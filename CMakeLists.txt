@@ -26,7 +26,7 @@ else()
 endif()
 
 include_directories(/opt/homebrew/include)
-include_directories(/Users/alexandertian/local_xtensorblas/include)
+include_directories(/Users/alexandertian/xtensor-blas/include)
 
 add_executable(NeuralNetwork main.cpp
         layers/layers.h

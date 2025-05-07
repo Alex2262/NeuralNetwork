@@ -2,7 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <random>
-#include <xtensor/xsort.hpp>
+#include <xtensor/misc/xsort.hpp>
 #include "neural_network.h"
 
 NeuralNetwork::NeuralNetwork(std::vector<size_t> p_input_size, CostID p_cost_id) {
