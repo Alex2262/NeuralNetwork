@@ -32,7 +32,7 @@ xt::xarray<float> Projection::feedforward(const xt::xarray<float>& inputs, Mode 
     size_t batch_size = inputs.shape()[0] / seq_len;
 
     xt::xtensor<float, 2>& embedding_matrix = embedding_layer->get_embedding_matrix();
-    xt::xtensor<float, 2> raw_outputs = xt::linalg::dot(inputs, xt::transpose(embedding_matrix));
+    xt::xtensor<float, 2> raw_outputs = eigen_dot(inputs, xt::transpose(embedding_matrix));
 
     if (mode == Mode::INFERENCE) {
         raw_outputs /= temperature;
@@ -71,8 +71,8 @@ xt::xarray<float> Projection::backprop(const xt::xarray<float>& p_delta, bool ca
     xt::xtensor<float, 2>& embedding_matrix = embedding_layer->get_embedding_matrix();
     xt::xtensor<float, 2>& grad_embedding_matrix = embedding_layer->get_grad_embedding_matrix();
 
-    grad_embedding_matrix += xt::linalg::dot(xt::transpose(delta), input_activation);
+    grad_embedding_matrix += eigen_dot(xt::transpose(delta), input_activation);
 
-    xt::xtensor<float, 2> delta_out = xt::linalg::dot(delta, embedding_matrix);
+    xt::xtensor<float, 2> delta_out = eigen_dot(delta, embedding_matrix);
     return delta_out;
 }

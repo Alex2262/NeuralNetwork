@@ -3,6 +3,7 @@
 #define NEURALNETWORK_TYPES_H
 
 #include <xtensor/xarray.hpp>
+#include <Eigen/Dense>
 #include <functional>
 
 using ActivationFunction = std::function<xt::xarray<float>(const xt::xarray<float>&)>;
@@ -10,6 +11,8 @@ using ActivationDerivative = std::function<xt::xarray<float>(const xt::xarray<fl
 
 using CostFunction = std::function<float(const xt::xarray<float>&, const xt::xarray<float>&)>;
 using CostDerivative = std::function<xt::xarray<float>(const xt::xarray<float>&, const xt::xarray<float>&)>;
+
+using EigenMat = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 constexpr float EPSILON = 1e-9f;
 

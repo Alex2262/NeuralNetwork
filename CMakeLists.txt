@@ -16,6 +16,7 @@ find_library(MATIO_LIB matio HINTS /opt/homebrew/lib /usr/local/lib)
 find_package(OpenCV REQUIRED)
 find_package(xtensor CONFIG REQUIRED)
 find_package(BLAS REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 if(NOT APPLE)
     message(STATUS "SIMD enabled (non-macOS)")
@@ -27,6 +28,7 @@ endif()
 
 include_directories(/opt/homebrew/include)
 include_directories(/Users/alexandertian/local_xtensorblas/include)
+include_directories(${EIGEN3_INCLUDE_DIRS})
 
 add_executable(NeuralNetwork main.cpp
         layers/layers.h

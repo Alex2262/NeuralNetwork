@@ -2,6 +2,7 @@
 #include <string>
 #include <xtensor/xmath.hpp>
 #include <xtensor/xview.hpp>
+#include <Eigen/Core>
 #include "utilities.h"
 
 xt::xarray<float> no_activation(const xt::xarray<float>& x) {
@@ -313,3 +314,21 @@ std::string format_time(size_t secs) {
 
     return s;
 }
+
+xt::xtensor<float, 2> eigen_dot(const xt::xtensor<float, 2>& p_A, const xt::xtensor<float, 2>& p_B) {
+    assert(p_A.shape()[1] == p_B.shape()[0]);
+
+    const xt::xtensor<float, 2> A = xt::eval(p_A);
+    const xt::xtensor<float, 2> B = xt::eval(p_B);
+
+    EigenMat A_eigen = Eigen::Map<const EigenMat>(A.data(), A.shape()[0], A.shape()[1]);
+    EigenMat B_eigen = Eigen::Map<const EigenMat>(B.data(), B.shape()[0], B.shape()[1]);
+
+    EigenMat C_eigen = A_eigen * B_eigen;
+
+    xt::xtensor<float, 2> C = xt::empty<float>({A.shape()[0], B.shape()[1]});
+    std::copy(C_eigen.data(), C_eigen.data() + C.size(), C.data());
+
+    return C;
+}
+

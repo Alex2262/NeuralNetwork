@@ -61,6 +61,8 @@ void update_adamw_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad
 
 std::string format_time(size_t secs);
 
+xt::xtensor<float, 2> eigen_dot(const xt::xtensor<float, 2>& p_A, const xt::xtensor<float, 2>& p_B);
+
 template <typename Shape>
 void print_shape(const Shape& shape) {
     std::string s;
