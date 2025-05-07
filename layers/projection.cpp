@@ -1,5 +1,4 @@
 
-#include <xtensor/xrandom.hpp>
 #include <xtensor-blas/xlinalg.hpp>
 
 #include "projection.h"
@@ -15,8 +14,6 @@ Projection::Projection(const std::vector<size_t>& p_input_size, Embedding* p_emb
 
     temperature = p_temperature;
     k = p_k;
-
-    std::cout << "INIT k " << k << " TEMP " << temperature << std::endl;
 
     input_size = p_input_size;
     output_size = {max_seq_len, vocab_size};
@@ -45,7 +42,6 @@ xt::xarray<float> Projection::feedforward(const xt::xarray<float>& inputs, Mode 
 
             for (size_t batch = 0; batch < raw_outputs.shape()[0]; batch++) {
                 for (size_t i = 0; i < vocab_size - k; i++) {
-                    // std::cout << "BAD " << i << " " << sorted_indices[i] << " " << raw_outputs(0, sorted_indices[i]) << std::endl;
                     raw_outputs(batch, sorted_indices(batch, i)) = -1e9f;
                 }
             }

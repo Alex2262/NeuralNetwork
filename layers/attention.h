@@ -19,22 +19,23 @@ private:
     std::vector<size_t> input_size;
     std::vector<size_t> output_size;
 
-    xt::xtensor<float, 2> weights_q, grad_weights_q, m_weights_q, v_weights_q;
-    xt::xtensor<float, 2> weights_k, grad_weights_k, m_weights_k, v_weights_k;
-    xt::xtensor<float, 2> weights_v, grad_weights_v, m_weights_v, v_weights_v;
-    xt::xtensor<float, 2> weights_o, grad_weights_o, m_weights_o, v_weights_o;
+    xt::xtensor<float, 2> weights_q, grad_weights_q, m_weights_q, v_weights_q;  // size: D^2
+    xt::xtensor<float, 2> weights_k, grad_weights_k, m_weights_k, v_weights_k;  // size: D^2
+    xt::xtensor<float, 2> weights_v, grad_weights_v, m_weights_v, v_weights_v;  // size: D^2
+    xt::xtensor<float, 2> weights_o, grad_weights_o, m_weights_o, v_weights_o;  // size: D^2
 
-    std::vector<xt::xtensor<float, 2>> Qi;
-    std::vector<xt::xtensor<float, 2>> Ki;
-    std::vector<xt::xtensor<float, 2>> Vi;
-    std::vector<xt::xtensor<float, 2>> Ri;
-    std::vector<xt::xtensor<float, 2>> Ai;
+    std::vector<xt::xtensor<float, 2>> Qi;  // size: B * L * D
+    std::vector<xt::xtensor<float, 2>> Ki;  // size: B * L * D
+    std::vector<xt::xtensor<float, 2>> Vi;  // size: B * L * D
+    std::vector<xt::xtensor<float, 2>> Ri;  // size: B * H * L^2
+    std::vector<xt::xtensor<float, 2>> Ai;  // size: B * H * L^2
 
     xt::xtensor<float, 2> E;
-    xt::xtensor<float, 2> A;
     xt::xtensor<float, 3> C;
 
     xt::xtensor<float, 2> C_reshaped;
+
+    xt::xtensor<float, 2> mask;
 
     xt::xtensor<float, 2> outputs;  // {batch_size * seq_len, d_model}
 
