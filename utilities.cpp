@@ -13,11 +13,11 @@ xt::xarray<float> no_activation_derivative(const xt::xarray<float>& x) {
 }
 
 xt::xarray<float> ReLU(const xt::xarray<float>& x) {
-    return xt::maximum(x, 0.0);
+    return xt::maximum(x, 0.0f);
 }
 
 xt::xarray<float> ReLU_derivative(const xt::xarray<float>& x) {
-    return xt::where(x > 0.0, 1.0, 0.0);
+    return xt::where(x > 0.0f, 1.0f, 0.0f);
 }
 
 xt::xarray<float> GELU(const xt::xarray<float>& x) {
@@ -37,7 +37,7 @@ xt::xarray<float> GELU_derivative(const xt::xarray<float>& x) {
 xt::xarray<float> GELU_approx(const xt::xarray<float>& x) {
     const auto sqrt_2_over_pi = static_cast<float>(std::sqrt(2.0f / M_PI));
     const float c = 0.044715f;
-    auto x3 = xt::pow(x, 3);
+    auto x3 = x * x * x;
     auto arg = sqrt_2_over_pi * (x + c * x3);
     return 0.5f * x * (1.0f + xt::tanh(arg));
 }
@@ -46,7 +46,7 @@ xt::xarray<float> GELU_approx_derivative(const xt::xarray<float>& x) {
     const auto sqrt_2_over_pi = static_cast<float>(std::sqrt(2.0f / M_PI));
     const float c = 0.044715f;
 
-    auto x2       = xt::pow(x, 2);
+    auto x2       = x * x;
     auto x3       = x * x2;
     auto arg      = sqrt_2_over_pi * (x + c * x3);
     auto tanh_arg = xt::tanh(arg);
@@ -56,13 +56,22 @@ xt::xarray<float> GELU_approx_derivative(const xt::xarray<float>& x) {
     return 0.5f * (1.0f + tanh_arg) + 0.5f * x * inner * sech2;
 }
 
+xt::xarray<float> GELU_fast(const xt::xarray<float>& x) {
+    return x * sigmoid(1.702f * x);
+}
+
+xt::xarray<float> GELU_fast_derivative(const xt::xarray<float>& x) {
+    auto s = sigmoid(1.702f * x);
+    return s + 1.702f * x * s * (1.0f - s);
+}
+
 xt::xarray<float> sigmoid(const xt::xarray<float>& x) {
-    return 1.0 / (1.0 + xt::exp(-x));
+    return 1.0f / (1.0f + xt::exp(-x));
 }
 
 xt::xarray<float> sigmoid_derivative(const xt::xarray<float>& x) {
     auto s = sigmoid(x);
-    return s * (1.0 - s);
+    return s * (1.0f - s);
 }
 
 // Assume a 2d tensor for batching
@@ -82,12 +91,12 @@ xt::xarray<float> softmax(const xt::xarray<float>& x) {
 
 
 xt::xarray<float> cross_entropy_loss(const xt::xarray<float>& probs, const xt::xarray<float>& labels) {
-    auto sample_loss = -xt::sum(labels * xt::log(probs + 1e-9), {1});  // sum over classes, 1e-9 for numerical safety
+    auto sample_loss = -xt::sum(labels * xt::log(probs + EPSILON), {1});  // sum over classes, 1e-9 for numerical safety
     return sample_loss;
 }
 
 xt::xarray<float> MSE(const xt::xarray<float>& activation, const xt::xarray<float>& labels) {
-    auto squared_error = 0.5 * xt::square(activation - labels);
+    auto squared_error = 0.5f * xt::square(activation - labels);
     auto sample_loss = xt::sum(squared_error, {1});
 
     return sample_loss;
@@ -102,7 +111,7 @@ ActivationFunction get_activation_function(ActivationID activation_id) {
         case ActivationID::RELU: return ReLU;
         case ActivationID::SIGMOID: return sigmoid;
         case ActivationID::SOFTMAX: return softmax;
-        case ActivationID::GELU: return GELU_approx;
+        case ActivationID::GELU: return GELU_fast;
         default: return no_activation;
     }
 }
@@ -112,7 +121,7 @@ ActivationDerivative get_activation_derivative(ActivationID activation_id) {
         case ActivationID::RELU: return ReLU_derivative;
         case ActivationID::SIGMOID: return sigmoid_derivative;
         case ActivationID::SOFTMAX: return nullptr; // softmax derivative handled differently
-        case ActivationID::GELU: return GELU_approx_derivative;
+        case ActivationID::GELU: return GELU_fast_derivative;
         default: return no_activation_derivative;
     }
 }

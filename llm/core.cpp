@@ -417,9 +417,12 @@ void LLM::gen_file(std::string file_name, size_t num_tokens) {
             for (int i = 0; i < max_seq_len - 1; i++) {
                 tensor_inputs(0, i) = tensor_inputs(0, i + 1);
             }
+
+            tensor_inputs(0, idx) = static_cast<float>(best);
         }
 
-        tensor_inputs(0, idx) = static_cast<float>(best);
+        else tensor_inputs(0, curr_seq_len) = static_cast<float>(best);
+
         curr_seq_len++;
 
         file << decode_map[best];

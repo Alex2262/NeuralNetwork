@@ -14,6 +14,16 @@ xt::xarray<float> no_activation_derivative(const xt::xarray<float>& x);
 
 xt::xarray<float> ReLU(const xt::xarray<float>& x);
 xt::xarray<float> ReLU_derivative(const xt::xarray<float>& x);
+
+xt::xarray<float> GELU(const xt::xarray<float>& x);
+xt::xarray<float> GELU_derivative(const xt::xarray<float>& x);
+
+xt::xarray<float> GELU_approx(const xt::xarray<float>& x);
+xt::xarray<float> GELU_approx_derivative(const xt::xarray<float>& x);
+
+xt::xarray<float> GELU_fast(const xt::xarray<float>& x);
+xt::xarray<float> GELU_fast_derivative(const xt::xarray<float>& x);
+
 xt::xarray<float> sigmoid(const xt::xarray<float>& x);
 xt::xarray<float> sigmoid_derivative(const xt::xarray<float>& x);
 xt::xarray<float> softmax(const xt::xarray<float>& x);
