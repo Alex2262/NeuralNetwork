@@ -35,8 +35,6 @@ Convolution::Convolution(std::vector<size_t>& p_input_size, size_t p_num_filters
     v_weights = xt::zeros_like(weights);
     v_biases = xt::zeros_like(biases);
 
-    timestep = 0;
-
     activation_id = p_activation_id;
 
     activation_function = get_activation_function(activation_id);
@@ -152,16 +150,36 @@ void Convolution::update(float lr) {
     grad_biases.fill(0);
 }
 
-void Convolution::update_adam(float lr, float beta1, float beta2) {
-    timestep++;
-
+void Convolution::update_adam(float lr, float beta1, float beta2, size_t timestep) {
     update_adam_4d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, timestep);
     update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, timestep);
 }
 
-void Convolution::update_adamw(float lr, float beta1, float beta2, float weight_decay) {
-    timestep++;
-
+void Convolution::update_adamw(float lr, float beta1, float beta2, float weight_decay, size_t timestep) {
     update_adamw_4d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, weight_decay, timestep);
     update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, timestep);
+}
+
+void Convolution::save_weights(std::vector<float>& all) {
+    save_4d(all, weights);
+    save_4d(all, grad_weights);
+    save_4d(all, m_weights);
+    save_4d(all, v_weights);
+
+    save_1d(all, biases);
+    save_1d(all, grad_biases);
+    save_1d(all, m_biases);
+    save_1d(all, v_biases);
+}
+
+void Convolution::load_weights(xt::xtensor<float, 1>& all, size_t& index) {
+    load_4d(all, weights, index);
+    load_4d(all, grad_weights, index);
+    load_4d(all, m_weights, index);
+    load_4d(all, v_weights, index);
+
+    load_1d(all, biases, index);
+    load_1d(all, grad_biases, index);
+    load_1d(all, m_biases, index);
+    load_1d(all, v_biases, index);
 }

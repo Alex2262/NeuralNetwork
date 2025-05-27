@@ -29,8 +29,6 @@ Dense::Dense(const std::vector<std::size_t>& p_input_size, size_t p_num_neurons,
     v_weights = xt::zeros_like(weights);
     v_biases = xt::zeros_like(biases);
 
-    timestep = 0;
-
     activation_id = p_activation_id;
 
     activation_function = get_activation_function(activation_id);
@@ -83,16 +81,37 @@ void Dense::update(float lr) {
     grad_biases.fill(0);
 }
 
-void Dense::update_adam(float lr, float beta1, float beta2) {
-    timestep++;
-
+void Dense::update_adam(float lr, float beta1, float beta2, size_t timestep) {
     update_adam_2d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, timestep);
     update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, timestep);
 }
 
-void Dense::update_adamw(float lr, float beta1, float beta2, float weight_decay) {
-    timestep++;
-
+void Dense::update_adamw(float lr, float beta1, float beta2, float weight_decay, size_t timestep) {
     update_adamw_2d(weights, grad_weights, m_weights, v_weights, lr, beta1, beta2, weight_decay, timestep);
     update_adam_1d(biases, grad_biases, m_biases, v_biases, lr, beta1, beta2, timestep);  // no weight decay for biases
+}
+
+
+void Dense::save_weights(std::vector<float>& all) {
+    save_2d(all, weights);
+    save_2d(all, grad_weights);
+    save_2d(all, m_weights);
+    save_2d(all, v_weights);
+
+    save_1d(all, biases);
+    save_1d(all, grad_biases);
+    save_1d(all, m_biases);
+    save_1d(all, v_biases);
+}
+
+void Dense::load_weights(xt::xtensor<float, 1>& all, size_t& index) {
+    load_2d(all, weights, index);
+    load_2d(all, grad_weights, index);
+    load_2d(all, m_weights, index);
+    load_2d(all, v_weights, index);
+
+    load_1d(all, biases, index);
+    load_1d(all, grad_biases, index);
+    load_1d(all, m_biases, index);
+    load_1d(all, v_biases, index);
 }

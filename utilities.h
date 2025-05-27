@@ -71,6 +71,20 @@ void update_adamw_4d(xt::xtensor<float, 4>& weights, xt::xtensor<float, 4>& grad
 
 std::string format_time(size_t secs);
 
+void save_1d(std::vector<float>& all, xt::xtensor<float, 1>& x);
+void save_2d(std::vector<float>& all, xt::xtensor<float, 2>& x);
+void save_4d(std::vector<float>& all, xt::xtensor<float, 4>& x);
+
+void load_1d(xt::xtensor<float, 1>& all, xt::xtensor<float, 1>& x, size_t& index);
+void load_2d(xt::xtensor<float, 1>& all, xt::xtensor<float, 2>& x, size_t& index);
+void load_4d(xt::xtensor<float, 1>& all, xt::xtensor<float, 4>& x, size_t& index);
+
+template <typename Out>
+void split(const std::string &s, char delim, Out result);
+
+std::vector<std::string> split(const std::string &s, char delim);
+
+
 template <typename Shape>
 void print_shape(const Shape& shape) {
     std::string s;

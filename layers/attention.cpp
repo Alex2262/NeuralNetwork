@@ -41,8 +41,6 @@ Attention::Attention(const std::vector<size_t>& p_input_size, size_t p_num_heads
     v_weights_v = xt::zeros_like(weights_v);
     v_weights_o = xt::zeros_like(weights_o);
 
-    timestep = 0;
-
     num_params = 4 * d_model * d_model;
 
     mask = xt::zeros<float>({max_seq_len, max_seq_len});
@@ -169,20 +167,60 @@ void Attention::update(float lr) {
     grad_weights_o.fill(0);
 }
 
-void Attention::update_adam(float lr, float beta1, float beta2) {
-    timestep++;
-
+void Attention::update_adam(float lr, float beta1, float beta2, size_t timestep) {
     update_adam_2d(weights_q, grad_weights_q, m_weights_q, v_weights_q, lr, beta1, beta2, timestep);
     update_adam_2d(weights_k, grad_weights_k, m_weights_k, v_weights_k, lr, beta1, beta2, timestep);
     update_adam_2d(weights_v, grad_weights_v, m_weights_v, v_weights_v, lr, beta1, beta2, timestep);
     update_adam_2d(weights_o, grad_weights_o, m_weights_o, v_weights_o, lr, beta1, beta2, timestep);
 }
 
-void Attention::update_adamw(float lr, float beta1, float beta2, float weight_decay) {
-    timestep++;
-
+void Attention::update_adamw(float lr, float beta1, float beta2, float weight_decay, size_t timestep) {
     update_adamw_2d(weights_q, grad_weights_q, m_weights_q, v_weights_q, lr, beta1, beta2, weight_decay, timestep);
     update_adamw_2d(weights_k, grad_weights_k, m_weights_k, v_weights_k, lr, beta1, beta2, weight_decay, timestep);
     update_adamw_2d(weights_v, grad_weights_v, m_weights_v, v_weights_v, lr, beta1, beta2, weight_decay, timestep);
     update_adamw_2d(weights_o, grad_weights_o, m_weights_o, v_weights_o, lr, beta1, beta2, weight_decay, timestep);
+}
+
+void Attention::save_weights(std::vector<float>& all) {
+    save_2d(all, weights_q);
+    save_2d(all, grad_weights_q);
+    save_2d(all, m_weights_q);
+    save_2d(all, v_weights_q);
+
+    save_2d(all, weights_k);
+    save_2d(all, grad_weights_k);
+    save_2d(all, m_weights_k);
+    save_2d(all, v_weights_k);
+
+    save_2d(all, weights_v);
+    save_2d(all, grad_weights_v);
+    save_2d(all, m_weights_v);
+    save_2d(all, v_weights_v);
+
+    save_2d(all, weights_o);
+    save_2d(all, grad_weights_o);
+    save_2d(all, m_weights_o);
+    save_2d(all, v_weights_o);
+}
+
+void Attention::load_weights(xt::xtensor<float, 1>& all, size_t& index) {
+    load_2d(all, weights_q, index);
+    load_2d(all, grad_weights_q, index);
+    load_2d(all, m_weights_q, index);
+    load_2d(all, v_weights_q, index);
+
+    load_2d(all, weights_k, index);
+    load_2d(all, grad_weights_k, index);
+    load_2d(all, m_weights_k, index);
+    load_2d(all, v_weights_k, index);
+
+    load_2d(all, weights_v, index);
+    load_2d(all, grad_weights_v, index);
+    load_2d(all, m_weights_v, index);
+    load_2d(all, v_weights_v, index);
+
+    load_2d(all, weights_o, index);
+    load_2d(all, grad_weights_o, index);
+    load_2d(all, m_weights_o, index);
+    load_2d(all, v_weights_o, index);
 }

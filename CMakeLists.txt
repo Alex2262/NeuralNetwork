@@ -27,8 +27,8 @@ add_executable(NeuralNetwork main.cpp
         utilities.h
         neural_network.h
         neural_network.cpp
-        test/mnist.h
-        test/mnist.cpp
+        mnist/mnist.h
+        mnist/mnist.cpp
         layers/convolution.cpp
         layers/convolution.h
         layers/flatten.cpp
@@ -51,6 +51,8 @@ add_executable(NeuralNetwork main.cpp
         layers/normalize.h
         layers/activation.cpp
         layers/activation.h
+        llm/test.cpp
+        llm/test.h
 )
 
 target_link_libraries(NeuralNetwork

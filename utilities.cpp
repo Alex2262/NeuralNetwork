@@ -322,3 +322,74 @@ std::string format_time(size_t secs) {
 
     return s;
 }
+
+void save_1d(std::vector<float>& all, xt::xtensor<float, 1>& x) {
+    for (size_t i = 0; i < x.shape()[0]; i++) {
+        all.push_back(x(i));
+    }
+}
+
+void save_2d(std::vector<float>& all, xt::xtensor<float, 2>& x) {
+    for (size_t i = 0; i < x.shape()[0]; i++) {
+        for (size_t j = 0; j < x.shape()[1]; j++) {
+            all.push_back(x(i, j));
+        }
+    }
+}
+
+void save_4d(std::vector<float>& all, xt::xtensor<float, 4>& x) {
+    for (size_t i = 0; i < x.shape()[0]; i++) {
+        for (size_t j = 0; j < x.shape()[1]; j++) {
+            for (size_t k = 0; k < x.shape()[2]; k++) {
+                for (size_t c = 0; c < x.shape()[3]; c++) {
+                    all.push_back(x(i, j, k, c));
+                }
+            }
+        }
+    }
+}
+
+
+void load_1d(xt::xtensor<float, 1>& all, xt::xtensor<float, 1>& x, size_t& index) {
+    for (size_t i = 0; i < x.shape()[0]; i++) {
+        x(i) = all(index);
+        index++;
+    }
+}
+
+void load_2d(xt::xtensor<float, 1>& all, xt::xtensor<float, 2>& x, size_t& index) {
+    for (size_t i = 0; i < x.shape()[0]; i++) {
+        for (size_t j = 0; j < x.shape()[1]; j++) {
+            x(i, j) = all(index);
+            index++;
+        }
+    }
+}
+
+void load_4d(xt::xtensor<float, 1>& all, xt::xtensor<float, 4>& x, size_t& index) {
+    for (size_t i = 0; i < x.shape()[0]; i++) {
+        for (size_t j = 0; j < x.shape()[1]; j++) {
+            for (size_t k = 0; k < x.shape()[2]; k++) {
+                for (size_t c = 0; c < x.shape()[3]; c++) {
+                    x(i, j, k, c) = all(index);
+                    index++;
+                }
+            }
+        }
+    }
+}
+
+template <typename Out>
+void split(const std::string &s, char delim, Out result) {
+    std::istringstream iss(s);
+    std::string item;
+    while (std::getline(iss, item, delim)) {
+        *result++ = item;
+    }
+}
+
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, std::back_inserter(elems));
+    return elems;
+}

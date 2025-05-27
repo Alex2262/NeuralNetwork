@@ -30,8 +30,8 @@ public:
 
     std::string get_name() const override { return "Embedding"; }
     void update(float lr) override;
-    void update_adam(float lr, float beta1, float beta2) override;
-    void update_adamw(float lr, float beta1, float beta2, float weight_decay) override;
+    void update_adam(float lr, float beta1, float beta2, size_t timestep) override;
+    void update_adamw(float lr, float beta1, float beta2, float weight_decay, size_t timestep) override;
 
     [[nodiscard]] ActivationID get_activation_id() override { return ActivationID::NONE; }
     [[nodiscard]] xt::xarray<float> get_outputs() override { return outputs; }
@@ -43,6 +43,9 @@ public:
     // specific to embedding layer, to support projection layer
     [[nodiscard]] xt::xtensor<float, 2>& get_embedding_matrix() { return embedding_matrix; }
     [[nodiscard]] xt::xtensor<float, 2>& get_grad_embedding_matrix() { return grad_embedding_matrix; }
+
+    void save_weights(std::vector<float>& all) override;
+    void load_weights(xt::xtensor<float, 1>& all, size_t& index) override;
 };
 
 #endif //NEURALNETWORK_EMBEDDING_H

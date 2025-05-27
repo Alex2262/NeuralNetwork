@@ -282,62 +282,78 @@ std::pair<xt::xtensor<float, 2>, xt::xtensor<float, 3>> LLM::get_random_batch(si
 }
 
 
-void LLM::train(size_t max_tokens, size_t eval_interval, size_t mini_batch_size, float split, float lr, float beta1, float beta2, float weight_decay) {
+void LLM::train(TrainInfo p_train_info) {
+
+    nn.set_train_info(p_train_info);
+    TrainInfo* train_info = nn.get_train_info();
+
+    size_t num_super_batch = train_info->num_super_batch;
+    size_t super_batch_size = train_info->super_batch_size;
+    size_t mini_batch_size = train_info->mini_batch_size;
+    size_t start_super_batch = train_info->current_super_batch + 1;
+
+    float lr = train_info->lr;
+    float beta1 = train_info->beta1;
+    float beta2 = train_info->beta2;
+    float weight_decay = train_info->weight_decay;
+
+    if (num_super_batch == 0 || super_batch_size == 0 || mini_batch_size == 0 || lr == 0 || beta1 == 0 || beta2 == 0 || weight_decay == 0) {
+        throw std::runtime_error("Set LLM Train Info: num_super_batch | super_batch_size | mini_batch_size | lr | beta1 | beta2 | weight_decay");
+    }
+
     gen.seed(rd());
 
-    split_encoded(split);
+    std::cout << "Projecting to train on " << num_super_batch * super_batch_size * mini_batch_size * max_seq_len << " tokens" << std::endl;
 
-    size_t num_tokens = 0;
-    size_t prev_tokens = 0;
+    size_t num_tokens = (start_super_batch - 1) * super_batch_size * mini_batch_size * max_seq_len;
 
     auto start_time = std::chrono::high_resolution_clock::now();
     float sum_eval_time = 0;
-    size_t num_evals = 0;
 
-    while (num_tokens < max_tokens) {
-        prev_tokens = num_tokens;
-        num_tokens += mini_batch_size * max_seq_len;
-        auto [train_data, train_labels] = get_random_batch(mini_batch_size);
+    for (size_t super_batch = start_super_batch; super_batch <= num_super_batch; super_batch++) {
+        for (size_t mini_batch = 1; mini_batch <= super_batch_size; mini_batch++) {
+            num_tokens += mini_batch_size * max_seq_len;
 
-        bool check = false;
-        if (num_tokens % eval_interval <= prev_tokens % eval_interval) {
-            check = true;
+            auto [train_data, train_labels] = get_random_batch(mini_batch_size);
+            nn.update_adamw(train_data, train_labels, lr, beta1, beta2, weight_decay);
+
+            auto curr = std::chrono::high_resolution_clock::now();
+
+            float percent_complete           = static_cast<float>(mini_batch) / static_cast<float>(super_batch_size) * 100.0f;
+            float elapsed_time               = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(curr - start_time).count()) / 1000.0f;
+            float tot_mini_batch_time        = elapsed_time - sum_eval_time;
+            float avg_mini_batch_time        = tot_mini_batch_time / static_cast<float>((super_batch - start_super_batch) * super_batch_size + mini_batch);
+            float avg_token_time             = avg_mini_batch_time / static_cast<float>(mini_batch_size * max_seq_len);
+            float avg_eval_time              = super_batch == start_super_batch ? (0.5f * avg_token_time * static_cast<float>(test_data_size)) : (sum_eval_time / static_cast<float>(super_batch - start_super_batch));
+            float avg_super_batch_time       = avg_mini_batch_time * static_cast<float>(super_batch_size) + avg_eval_time;
+            float remaining_super_batch_time = avg_super_batch_time - avg_mini_batch_time * static_cast<float>(mini_batch);
+            float remaining_total_time       = avg_super_batch_time * static_cast<float>(num_super_batch - super_batch + 1) - remaining_super_batch_time;
+
+            std::cout << "\rToken #" << num_tokens
+                      << " | Super Batch: " << super_batch
+                      << " | Progress: " << std::fixed << std::setprecision(4) << percent_complete << "% complete"
+                      << " | Elapsed: "  << format_time(static_cast<size_t>(elapsed_time))
+                      << " | Remaining Super Batch Time: " << format_time(static_cast<size_t>(remaining_super_batch_time))
+                      << " | Remaining Total Time: " << format_time(static_cast<size_t>(remaining_total_time))
+                      << " | Avg Super Batch Time: " << format_time(static_cast<size_t>(avg_super_batch_time))
+                      << std::flush;
         }
 
-        nn.update_adamw(train_data, train_labels, lr, beta1, beta2, weight_decay);
-        float percent_complete = std::min<float>((static_cast<float>(num_tokens % eval_interval) /
-                                                  static_cast<float>(eval_interval)) * 100, 100.0f);
+        auto eval_start_time    = std::chrono::high_resolution_clock::now();
 
-        if (check) percent_complete = 100;
+        float current_accuracy  = batched_evaluate(mini_batch_size);
+        float current_loss      = batched_loss(mini_batch_size);
 
-        auto curr = std::chrono::high_resolution_clock::now();
+        auto eval_end_time      = std::chrono::high_resolution_clock::now();
+        float eval_elapsed_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(eval_end_time - eval_start_time).count()) / 1000.0f;
+        sum_eval_time += eval_elapsed_time;
 
-        float elapsed_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(curr - start_time).count()) / 1000.0f;
-        float avg_token_time = (elapsed_time - sum_eval_time) / static_cast<float>(num_tokens);
-        float expected_eval_time = num_evals == 0 ? (0.5f * avg_token_time * static_cast<float>(test_data_size)) : (sum_eval_time / static_cast<float>(num_evals));
-        float remaining_interval_time = expected_eval_time + (check ? 0 : (avg_token_time * static_cast<float>(eval_interval - num_tokens % eval_interval)));
-        size_t expected_intervals = ceil(static_cast<float>(max_tokens - num_tokens) / static_cast<float>(eval_interval));
-        float remaining_total_time = avg_token_time * static_cast<float>(max_tokens - num_tokens) + expected_eval_time * static_cast<float>(expected_intervals);
+        std::cout << "\rToken #" << num_tokens << " | Accuracy: " << current_accuracy << " | Loss: " << current_loss << std::endl;
 
-        std::cout << "\rToken #" << num_tokens
-                  << " | Progress: " << std::fixed << std::setprecision(4) << percent_complete << "% complete"
-                  << " | Elapsed: "  << format_time(static_cast<size_t>(elapsed_time))
-                  << " | Remaining Interval Time: " << format_time(static_cast<size_t>(remaining_interval_time))
-                  << " | Remaining Total Time: " << format_time(static_cast<size_t>(remaining_total_time))
-                  << " | Avg Interval Time: " << avg_token_time * static_cast<float>(eval_interval)
-                  << std::flush;
+        train_info->current_super_batch = super_batch;
 
-        if (check) {
-            auto eval_start_time   = std::chrono::high_resolution_clock::now();
-            float current_accuracy = batched_evaluate(mini_batch_size);
-            float current_loss     = batched_loss(mini_batch_size);
-            auto eval_end_time     = std::chrono::high_resolution_clock::now();
-            float eval_elapsed_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(eval_end_time - eval_start_time).count()) / 1000.0f;
-            sum_eval_time += eval_elapsed_time;
-            num_evals++;
-
-            std::cout << "\rToken #" << num_tokens << " | Accuracy: " << current_accuracy << " | Loss: " << current_loss << std::endl;
-        }
+        std::string save_prefix = train_info->save_prefix + "_sb_" + std::to_string(super_batch);
+        nn.save(save_prefix);
     }
 }
 
@@ -436,4 +452,9 @@ void LLM::gen_file(std::string file_name, size_t num_tokens) {
     std::cout << std::endl;
 
     file.close();
+}
+
+
+void LLM::load(std::string& file_prefix) {
+    nn.load(file_prefix);
 }

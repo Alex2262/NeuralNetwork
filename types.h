@@ -39,4 +39,9 @@ enum class Mode {
     INFERENCE
 };
 
+enum class TrainingMode {
+    Fresh,
+    Resume
+};
+
 #endif //NEURALNETWORK_TYPES_H

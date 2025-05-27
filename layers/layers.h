@@ -12,7 +12,6 @@
 
 class Layer {
 public:
-    size_t timestep = 0;
     xt::xarray<float> res_delta = 0;
 
     void set_res_delta(const xt::xarray<float>& delta) { res_delta = delta; };
@@ -29,9 +28,13 @@ public:
     virtual xt::xarray<float> get_activations() = 0;
     virtual xt::xarray<float> feedforward(const xt::xarray<float>& inputs, Mode mode) = 0;
     virtual xt::xarray<float> backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) = 0;
+
     virtual void update(float lr) = 0;
-    virtual void update_adam(float lr, float beta1, float beta2) = 0;
-    virtual void update_adamw(float lr, float beta1, float beta2, float weight_decay) = 0;
+    virtual void update_adam(float lr, float beta1, float beta2, size_t timestep) = 0;
+    virtual void update_adamw(float lr, float beta1, float beta2, float weight_decay, size_t timestep) = 0;
+
+    virtual void save_weights(std::vector<float>& all) = 0;
+    virtual void load_weights(xt::xtensor<float, 1>& all, size_t& index) = 0;
 };
 
 

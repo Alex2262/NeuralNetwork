@@ -144,7 +144,13 @@ void demo() {
     nn.add_layer<Dense>(4096, ActivationID::RELU);
     nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
 
-    nn.SGD(train_images, train_labels, test_images, test_labels, 5, 64, 0.1);
+    TrainInfo train_info;
+    train_info.num_epochs = 5;
+    train_info.mini_batch_size = 64;
+    train_info.lr = 0.1;
+
+    nn.set_train_info(train_info);
+    nn.SGD(train_images, train_labels, test_images, test_labels);
     show_images(nn, train_images, train_labels);
 }
 
@@ -159,14 +165,9 @@ void test_mnist() {
     std::vector<size_t> input_size = {784};
     NeuralNetwork nn(input_size, CostID::CEL);
 
-    /*
     nn.add_layer<Dense>(256, ActivationID::NONE);
     nn.add_layer<Normalize>();
     nn.add_layer<Activation>(ActivationID::RELU);
-    nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
-    */
-
-    nn.add_layer<Dense>(30, ActivationID::RELU);
     nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
 
     /*
@@ -195,7 +196,101 @@ void test_mnist() {
      */
 
     // nn.SGD(train_images, train_labels, test_images, test_labels, 6, 64, 0.1);
-    nn.Adam(train_images, train_labels, test_images, test_labels, 10, 64, 0.001, 0.9, 0.999);
+
+    TrainInfo train_info;
+    train_info.num_epochs = 10;
+    train_info.mini_batch_size = 64;
+    train_info.lr = 0.001;
+    train_info.beta1 = 0.9;
+    train_info.beta2 = 0.999;
+    train_info.weight_decay = 0.01;
+    train_info.save_prefix = "/Users/alexandertian/CLionProjects/NeuralNetwork/saved/mnist_nn";
+
+    nn.set_train_info(train_info);
+    nn.AdamW(train_images, train_labels, test_images, test_labels);
+    show_images(nn, train_images, train_labels);
+}
+
+
+void test_load() {
+    std::vector<xt::xarray<float>> train_images, train_labels;
+    std::vector<xt::xarray<float>> test_images, test_labels;
+
+    load_mnist_data("/Users/alexandertian/CLionProjects/NeuralNetwork/test/mnist-original.mat",
+                    train_images, train_labels, test_images, test_labels, 0.8, 70000);
+
+    auto conv_test_inputs = convert_vec_inputs(test_images);
+    auto conv_test_labels = convert_vec_inputs(test_labels);
+
+    std::vector<size_t> input_size = {784};
+    NeuralNetwork nn(input_size, CostID::CEL);
+
+    nn.add_layer<Dense>(30, ActivationID::NONE);
+    nn.add_layer<Normalize>();
+    nn.add_layer<Activation>(ActivationID::RELU);
+    nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
+
+    TrainInfo train_info;
+    train_info.num_epochs = 10;
+    train_info.mini_batch_size = 64;
+    train_info.lr = 0.001;
+    train_info.beta1 = 0.9;
+    train_info.beta2 = 0.999;
+    train_info.weight_decay = 0.01;
+    train_info.save_prefix = "/Users/alexandertian/CLionProjects/NeuralNetwork/saved/mnist_nn";
+
+    nn.set_train_info(train_info);
+    // nn.AdamW(train_images, train_labels, test_images, test_labels);
+
+    std::string load_prefix = train_info.save_prefix + "_epoch10";
+
+    nn.load(load_prefix);
+    float current_accuracy = nn.evaluate(conv_test_inputs, conv_test_labels);
+
+    std::cout << "Accuracy: " << current_accuracy << std::endl;
+    show_images(nn, train_images, train_labels);
+}
+
+void test_resume_training() {
+    std::vector<xt::xarray<float>> train_images, train_labels;
+    std::vector<xt::xarray<float>> test_images, test_labels;
+
+    load_mnist_data("/Users/alexandertian/CLionProjects/NeuralNetwork/test/mnist-original.mat",
+                    train_images, train_labels, test_images, test_labels, 0.8, 70000);
+
+    auto conv_test_inputs = convert_vec_inputs(test_images);
+    auto conv_test_labels = convert_vec_inputs(test_labels);
+
+    std::vector<size_t> input_size = {784};
+    NeuralNetwork nn(input_size, CostID::CEL);
+
+    nn.add_layer<Dense>(1024, ActivationID::NONE);
+    nn.add_layer<Normalize>();
+    nn.add_layer<Activation>(ActivationID::RELU);
+    nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
+
+    TrainInfo train_info;
+    train_info.num_epochs = 5;
+    train_info.mini_batch_size = 64;
+    train_info.lr = 0.001;
+    train_info.beta1 = 0.9;
+    train_info.beta2 = 0.999;
+    train_info.weight_decay = 0.01;
+    train_info.save_prefix = "/Users/alexandertian/CLionProjects/NeuralNetwork/mnist/saved/mnist_nn";
+
+    nn.set_train_info(train_info);
+    nn.AdamW(train_images, train_labels, test_images, test_labels);
+
+    std::string load_prefix = train_info.save_prefix + "_epoch_5";
+
+    nn.load(load_prefix);
+    float current_accuracy = nn.evaluate(conv_test_inputs, conv_test_labels);
+
+    train_info.num_epochs = 10;
+    nn.set_train_info(train_info);
+    nn.AdamW(train_images, train_labels, test_images, test_labels);
+
+    std::cout << "Accuracy: " << current_accuracy << std::endl;
     show_images(nn, train_images, train_labels);
 }
 
@@ -223,7 +318,6 @@ void test_mnist_cnn() {
     nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
      */
 
-    /*
     nn.add_layer<Convolution>(64, 5, 1, ActivationID::RELU);
     nn.add_layer<MaxPool>(2, 2);
     nn.add_layer<Flatten>();
@@ -231,12 +325,21 @@ void test_mnist_cnn() {
     nn.add_layer<Normalize>();
     nn.add_layer<Activation>(ActivationID::RELU);
     nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
-     */
 
     // 97.8% accuracy with Convolution(64, 5, 1 RELU) --> Maxpool(2, 2) --> Flatten --> Dense(256, RELU) --> Dense(10, SOFTMAX);
 
     // nn.SGD(train_images, train_labels, test_images, test_labels, 10, 64, 0.02);
-    nn.Adam(train_images, train_labels, test_images, test_labels, 15, 64, 0.001, 0.9, 0.999);
+
+    TrainInfo train_info;
+    train_info.num_epochs = 10;
+    train_info.mini_batch_size = 64;
+    train_info.lr = 0.001;
+    train_info.beta1 = 0.9;
+    train_info.beta2 = 0.999;
+    train_info.weight_decay = 0.01;
+
+    nn.set_train_info(train_info);
+    nn.AdamW(train_images, train_labels, test_images, test_labels);
 }
 
 

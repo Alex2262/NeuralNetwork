@@ -24,9 +24,6 @@ Normalize::Normalize(const std::vector<size_t>& p_input_size) {
 
     v_gamma = xt::zeros_like(gamma);
     v_beta = xt::zeros_like(beta);
-
-    timestep = 0;
-
     num_params = feature_size + feature_size;
 }
 
@@ -81,13 +78,37 @@ void Normalize::update(float lr) {
     grad_beta.fill(0);
 }
 
-void Normalize::update_adam(float lr, float beta1, float beta2) {
+void Normalize::update_adam(float lr, float beta1, float beta2, size_t timestep) {
     timestep++;
 
     update_adam_1d(gamma, grad_gamma, m_gamma, v_gamma, lr, beta1, beta2, timestep);
     update_adam_1d(beta, grad_beta, m_beta, v_beta, lr, beta1, beta2, timestep);
 }
 
-void Normalize::update_adamw(float lr, float beta1, float beta2, float weight_decay) {
-    update_adam(lr, beta1, beta2);
+void Normalize::update_adamw(float lr, float beta1, float beta2, float weight_decay, size_t timestep) {
+    update_adam(lr, beta1, beta2, timestep);
+}
+
+void Normalize::save_weights(std::vector<float>& all) {
+    save_1d(all, gamma);
+    save_1d(all, grad_gamma);
+    save_1d(all, m_gamma);
+    save_1d(all, v_gamma);
+
+    save_1d(all, beta);
+    save_1d(all, grad_beta);
+    save_1d(all, m_beta);
+    save_1d(all, v_beta);
+}
+
+void Normalize::load_weights(xt::xtensor<float, 1>& all, size_t& index) {
+    load_1d(all, gamma, index);
+    load_1d(all, grad_gamma, index);
+    load_1d(all, m_gamma, index);
+    load_1d(all, v_gamma, index);
+
+    load_1d(all, beta, index);
+    load_1d(all, grad_beta, index);
+    load_1d(all, m_beta, index);
+    load_1d(all, v_beta, index);
 }

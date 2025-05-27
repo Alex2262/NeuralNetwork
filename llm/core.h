@@ -55,11 +55,7 @@ private:
     void set_data();
     void sanity_checks() const;
 
-    void split_encoded(float split);
-
     std::pair<xt::xtensor<float, 2>, xt::xtensor<float, 3>> index_test_batch(size_t batch_size, size_t ind);
-    float batched_evaluate(size_t batch_size);
-    float batched_loss(size_t batch_size);
     std::pair<xt::xtensor<float, 2>, xt::xtensor<float, 3>> get_random_batch(size_t batch_size);
 
     size_t sample(const xt::xtensor<float, 3>& activations, size_t batch, size_t idx);
@@ -67,11 +63,18 @@ private:
 public:
     LLM(size_t p_num_layers, size_t p_num_heads, size_t p_max_seq_len, size_t p_d_model, size_t p_k, float p_dropout_rate, float p_temperature, std::vector<std::string>& p_file_names);
 
-    void train(size_t max_tokens, size_t eval_interval, size_t mini_batch_size, float split, float lr, float beta1, float beta2, float weight_decay);
+    float batched_evaluate(size_t batch_size);
+    float batched_loss(size_t batch_size);
+
+    void split_encoded(float split);
+
+    void train(TrainInfo p_train_info);
 
     void run();
 
     void gen_file(std::string file_name, size_t num_tokens);
+
+    void load(std::string& file_prefix);
 
 };
 

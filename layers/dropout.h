@@ -25,8 +25,8 @@ public:
 
     std::string get_name() const override { return "Dropout"; }
     void update(float lr) override {};
-    void update_adam(float lr, float beta1, float beta2) override {};
-    void update_adamw(float lr, float beta1, float beta2, float weight_decay) override {};
+    void update_adam(float lr, float beta1, float beta2, size_t timestep) override {};
+    void update_adamw(float lr, float beta1, float beta2, float weight_decay, size_t timestep) override {};
 
     [[nodiscard]] ActivationID get_activation_id() override { return ActivationID::NONE; }
     [[nodiscard]] xt::xarray<float> get_outputs() override { return outputs; }
@@ -34,6 +34,9 @@ public:
     [[nodiscard]] std::vector<size_t> get_input_size() const override { return input_size; }
     [[nodiscard]] std::vector<size_t> get_output_size() const override { return output_size; }
     [[nodiscard]] size_t get_num_params() const override { return 0; }
+
+    void save_weights(std::vector<float>& all) override {};
+    void load_weights(xt::xtensor<float, 1>& all, size_t& index) override {};
 };
 
 #endif //NEURALNETWORK_DROPOUT_H

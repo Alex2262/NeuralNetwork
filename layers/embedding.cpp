@@ -26,8 +26,6 @@ Embedding::Embedding(const std::vector<size_t>& p_input_size, size_t p_vocab_siz
     v_embedding_matrix = xt::zeros_like(embedding_matrix);
     v_positional_matrix = xt::zeros_like(positional_matrix);
 
-    timestep = 0;
-
     num_params = vocab_size * d_model + max_seq_len * d_model;
 }
 
@@ -87,13 +85,36 @@ void Embedding::update(float lr) {
     grad_positional_matrix.fill(0);
 }
 
-void Embedding::update_adam(float lr, float beta1, float beta2) {
-    timestep++;
-
+void Embedding::update_adam(float lr, float beta1, float beta2, size_t timestep) {
     update_adam_2d(embedding_matrix, grad_embedding_matrix, m_embedding_matrix, v_embedding_matrix, lr, beta1, beta2, timestep);
     update_adam_2d(positional_matrix, grad_positional_matrix, m_positional_matrix, v_positional_matrix, lr, beta1, beta2, timestep);
 }
 
-void Embedding::update_adamw(float lr, float beta1, float beta2, float weight_decay) {
-    update_adam(lr, beta1, beta2);
+void Embedding::update_adamw(float lr, float beta1, float beta2, float weight_decay, size_t timestep) {
+    update_adam(lr, beta1, beta2, timestep);
+}
+
+
+void Embedding::save_weights(std::vector<float>& all) {
+    save_2d(all, embedding_matrix);
+    save_2d(all, grad_embedding_matrix);
+    save_2d(all, m_embedding_matrix);
+    save_2d(all, v_embedding_matrix);
+
+    save_2d(all, positional_matrix);
+    save_2d(all, grad_positional_matrix);
+    save_2d(all, m_positional_matrix);
+    save_2d(all, v_positional_matrix);
+}
+
+void Embedding::load_weights(xt::xtensor<float, 1>& all, size_t& index) {
+    load_2d(all, embedding_matrix, index);
+    load_2d(all, grad_embedding_matrix, index);
+    load_2d(all, m_embedding_matrix, index);
+    load_2d(all, v_embedding_matrix, index);
+
+    load_2d(all, positional_matrix, index);
+    load_2d(all, grad_positional_matrix, index);
+    load_2d(all, m_positional_matrix, index);
+    load_2d(all, v_positional_matrix, index);
 }

@@ -2,7 +2,9 @@
 #include <iostream>
 #include <iomanip>
 #include <random>
+#include <filesystem>
 #include <xtensor/misc/xsort.hpp>
+#include <xtensor/io/xnpy.hpp>
 #include "neural_network.h"
 
 NeuralNetwork::NeuralNetwork(std::vector<size_t> p_input_size, CostID p_cost_id) {
@@ -48,20 +50,22 @@ void NeuralNetwork::update(const xt::xarray<float>& inputs,
 void NeuralNetwork::update_adam(const xt::xarray<float>& inputs,
                                 const xt::xarray<float>& labels,
                                 float lr, float beta1, float beta2) {
+    train_info.timestep++;
     backprop(inputs, labels);
 
     for (std::unique_ptr<Layer>& layer : layers) {
-        layer->update_adam(lr, beta1, beta2);
+        layer->update_adam(lr, beta1, beta2, train_info.timestep);
     }
 }
 
 void NeuralNetwork::update_adamw(const xt::xarray<float>& inputs,
                                  const xt::xarray<float>& labels,
                                  float lr, float beta1, float beta2, float weight_decay) {
+    train_info.timestep++;
     backprop(inputs, labels);
 
     for (std::unique_ptr<Layer>& layer : layers) {
-        layer->update_adamw(lr, beta1, beta2, weight_decay);
+        layer->update_adamw(lr, beta1, beta2, weight_decay, train_info.timestep);
     }
 }
 
@@ -109,8 +113,17 @@ float NeuralNetwork::loss(const xt::xarray<float>& inputs, const xt::xarray<floa
 void NeuralNetwork::SGD(const std::vector<xt::xarray<float>>& training_inputs,
                         const std::vector<xt::xarray<float>>& training_labels,
                         const std::vector<xt::xarray<float>>& test_inputs,
-                        const std::vector<xt::xarray<float>>& test_labels,
-                        size_t epochs, size_t mini_batch_size, float lr) {
+                        const std::vector<xt::xarray<float>>& test_labels) {
+
+    size_t epochs = train_info.num_epochs;
+    size_t mini_batch_size = train_info.mini_batch_size;
+    size_t start_epoch = train_info.current_epoch;
+
+    float lr = train_info.lr;
+
+    if (epochs == 0 || mini_batch_size == 0 || lr == 0) {
+        throw std::runtime_error("Set SGD Train Info: num_epochs | mini_batch_size | lr");
+    }
 
     auto conv_test_inputs = convert_vec_inputs(test_inputs);
     auto conv_test_labels = convert_vec_inputs(test_labels);
@@ -123,7 +136,7 @@ void NeuralNetwork::SGD(const std::vector<xt::xarray<float>>& training_inputs,
     std::vector<size_t> indices(n);
     std::iota(indices.begin(), indices.end(), 0);
 
-    for (int epoch = 0; epoch < epochs; epoch++) {
+    for (size_t epoch = start_epoch; epoch < epochs; epoch++) {
         auto start_time = std::chrono::high_resolution_clock::now();
         std::shuffle(indices.begin(), indices.end(), g);
 
@@ -147,29 +160,25 @@ void NeuralNetwork::SGD(const std::vector<xt::xarray<float>>& training_inputs,
 
             update(inputs, labels, lr);
 
-            auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(
-                    std::chrono::high_resolution_clock::now() - start_time
-            ).count();
-
+            auto curr = std::chrono::high_resolution_clock::now();
+            float elapsed_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(curr - start_time).count()) / 1000.0f;
             float avg_time_per_batch = static_cast<float>(elapsed_time) / static_cast<float>(batch_index + 1);
-            int remaining_batches = static_cast<int>(num_batches - (batch_index + 1));
-            int estimated_remaining_time = remaining_batches * static_cast<int>(avg_time_per_batch);
-
-            int minutes = estimated_remaining_time / 60;
-            int seconds = estimated_remaining_time % 60;
+            size_t remaining_batches = static_cast<int>(num_batches - (batch_index + 1));
+            float estimated_remaining_time = static_cast<float>(remaining_batches) * avg_time_per_batch;
 
             float percent_complete = (static_cast<float>(batch_index + 1) /
-                                       static_cast<float>(num_batches)) * 100;
+                                      static_cast<float>(num_batches)) * 100;
 
             std::cout << "\rEpoch #" << (epoch + 1)
                       << " progress: " << std::fixed << std::setprecision(4) << percent_complete << "% complete | "
-                      << "Estimated time remaining: " << minutes << ":" << (seconds < 10 ? "0" : "") << seconds;
+                      << "Estimated time remaining: " << format_time(static_cast<size_t>(estimated_remaining_time));
 
             std::fflush(stdout);
         }
 
         float current_accuracy = evaluate(conv_test_inputs, conv_test_labels);
 
+        train_info.current_epoch = epoch;
         std::cout << "\rEpoch #" << (epoch + 1) << " | Accuracy: " << current_accuracy << std::endl;
     }
 }
@@ -179,8 +188,19 @@ void NeuralNetwork::SGD(const std::vector<xt::xarray<float>>& training_inputs,
 void NeuralNetwork::Adam(const std::vector<xt::xarray<float>>& training_inputs,
                          const std::vector<xt::xarray<float>>& training_labels,
                          const std::vector<xt::xarray<float>>& test_inputs,
-                         const std::vector<xt::xarray<float>>& test_labels,
-                         size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2) {
+                         const std::vector<xt::xarray<float>>& test_labels) {
+
+    size_t epochs = train_info.num_epochs;
+    size_t mini_batch_size = train_info.mini_batch_size;
+    size_t start_epoch = train_info.current_epoch;
+
+    float lr = train_info.lr;
+    float beta1 = train_info.beta1;
+    float beta2 = train_info.beta2;
+
+    if (epochs == 0 || mini_batch_size == 0 || lr == 0 || beta1 == 0 || beta2 == 0) {
+        throw std::runtime_error("Set Adam Train Info: num_epochs | mini_batch_size | lr | beta1 | beta2");
+    }
 
     auto conv_test_inputs = convert_vec_inputs(test_inputs);
     auto conv_test_labels = convert_vec_inputs(test_labels);
@@ -193,7 +213,7 @@ void NeuralNetwork::Adam(const std::vector<xt::xarray<float>>& training_inputs,
     std::vector<size_t> indices(n);
     std::iota(indices.begin(), indices.end(), 0);
 
-    for (int epoch = 0; epoch < epochs; epoch++) {
+    for (size_t epoch = start_epoch; epoch <= epochs; epoch++) {
         auto start_time = std::chrono::high_resolution_clock::now();
         std::shuffle(indices.begin(), indices.end(), g);
 
@@ -217,29 +237,25 @@ void NeuralNetwork::Adam(const std::vector<xt::xarray<float>>& training_inputs,
 
             update_adam(inputs, labels, lr, beta1, beta2);
 
-            auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(
-                    std::chrono::high_resolution_clock::now() - start_time
-            ).count();
-
+            auto curr = std::chrono::high_resolution_clock::now();
+            float elapsed_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(curr - start_time).count()) / 1000.0f;
             float avg_time_per_batch = static_cast<float>(elapsed_time) / static_cast<float>(batch_index + 1);
-            int remaining_batches = static_cast<int>(num_batches - (batch_index + 1));
-            int estimated_remaining_time = static_cast<int>(static_cast<float>(remaining_batches) * avg_time_per_batch);
-
-            int minutes = estimated_remaining_time / 60;
-            int seconds = estimated_remaining_time % 60;
+            size_t remaining_batches = static_cast<int>(num_batches - (batch_index + 1));
+            float estimated_remaining_time = static_cast<float>(remaining_batches) * avg_time_per_batch;
 
             float percent_complete = (static_cast<float>(batch_index + 1) /
                                       static_cast<float>(num_batches)) * 100;
 
             std::cout << "\rEpoch #" << (epoch + 1)
                       << " progress: " << std::fixed << std::setprecision(4) << percent_complete << "% complete | "
-                      << "Estimated time remaining: " << minutes << ":" << (seconds < 10 ? "0" : "") << seconds;
+                      << "Estimated time remaining: " << format_time(static_cast<size_t>(estimated_remaining_time));
 
             std::fflush(stdout);
         }
 
         float current_accuracy = evaluate(conv_test_inputs, conv_test_labels);
 
+        train_info.current_epoch = epoch;
         std::cout << "\rEpoch #" << (epoch + 1) << " | Accuracy: " << current_accuracy << std::endl;
     }
 }
@@ -247,8 +263,20 @@ void NeuralNetwork::Adam(const std::vector<xt::xarray<float>>& training_inputs,
 void NeuralNetwork::AdamW(const std::vector<xt::xarray<float>>& training_inputs,
                           const std::vector<xt::xarray<float>>& training_labels,
                           const std::vector<xt::xarray<float>>& test_inputs,
-                          const std::vector<xt::xarray<float>>& test_labels,
-                          size_t epochs, size_t mini_batch_size, float lr, float beta1, float beta2, float weight_decay) {
+                          const std::vector<xt::xarray<float>>& test_labels) {
+
+    size_t epochs = train_info.num_epochs;
+    size_t mini_batch_size = train_info.mini_batch_size;
+    size_t start_epoch = train_info.current_epoch + 1;
+
+    float lr = train_info.lr;
+    float beta1 = train_info.beta1;
+    float beta2 = train_info.beta2;
+    float weight_decay = train_info.weight_decay;
+
+    if (epochs == 0 || mini_batch_size == 0 || lr == 0 || beta1 == 0 || beta2 == 0 || weight_decay == 0) {
+        throw std::runtime_error("Set AdamW Train Info: num_epochs | mini_batch_size | lr | beta1 | beta2 | weight_decay");
+    }
 
     auto conv_test_inputs = convert_vec_inputs(test_inputs);
     auto conv_test_labels = convert_vec_inputs(test_labels);
@@ -261,7 +289,7 @@ void NeuralNetwork::AdamW(const std::vector<xt::xarray<float>>& training_inputs,
     std::vector<size_t> indices(n);
     std::iota(indices.begin(), indices.end(), 0);
 
-    for (int epoch = 0; epoch < epochs; epoch++) {
+    for (size_t epoch = start_epoch; epoch <= epochs; epoch++) {
         auto start_time = std::chrono::high_resolution_clock::now();
         std::shuffle(indices.begin(), indices.end(), g);
 
@@ -285,29 +313,110 @@ void NeuralNetwork::AdamW(const std::vector<xt::xarray<float>>& training_inputs,
 
             update_adam(inputs, labels, lr, beta1, beta2);
 
-            auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(
-                    std::chrono::high_resolution_clock::now() - start_time
-            ).count();
-
+            auto curr = std::chrono::high_resolution_clock::now();
+            float elapsed_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(curr - start_time).count()) / 1000.0f;
             float avg_time_per_batch = static_cast<float>(elapsed_time) / static_cast<float>(batch_index + 1);
-            int remaining_batches = static_cast<int>(num_batches - (batch_index + 1));
-            int estimated_remaining_time = static_cast<int>(static_cast<float>(remaining_batches) * avg_time_per_batch);
-
-            int minutes = estimated_remaining_time / 60;
-            int seconds = estimated_remaining_time % 60;
+            size_t remaining_batches = static_cast<int>(num_batches - (batch_index + 1));
+            float estimated_remaining_time = static_cast<float>(remaining_batches) * avg_time_per_batch;
 
             float percent_complete = (static_cast<float>(batch_index + 1) /
                                       static_cast<float>(num_batches)) * 100;
 
-            std::cout << "\rEpoch #" << (epoch + 1)
+            std::cout << "\rEpoch #" << epoch
                       << " progress: " << std::fixed << std::setprecision(4) << percent_complete << "% complete | "
-                      << "Estimated time remaining: " << minutes << ":" << (seconds < 10 ? "0" : "") << seconds;
+                      << "Estimated time remaining: " << format_time(static_cast<size_t>(estimated_remaining_time));
 
             std::fflush(stdout);
         }
 
         float current_accuracy = evaluate(conv_test_inputs, conv_test_labels);
 
-        std::cout << "\rEpoch #" << (epoch + 1) << " | Accuracy: " << current_accuracy << std::endl;
+        std::cout << "\rEpoch #" << epoch << " | Accuracy: " << current_accuracy << std::endl;
+
+        std::string save_prefix = train_info.save_prefix + "_epoch_" + std::to_string(epoch);
+
+        train_info.current_epoch = epoch;
+        save(save_prefix);
     }
+}
+
+
+void NeuralNetwork::save(std::string& file_prefix) {
+    std::string npy_file_name = file_prefix + "_weights.npy";
+    std::string info_file_name = file_prefix + "_info.txt";
+
+    std::vector<float> all;
+    for (std::unique_ptr<Layer>& layer : layers) {
+        layer->save_weights(all);
+    }
+
+    xt::xarray<float> data = xt::zeros<float>({all.size()});
+    for (size_t i = 0; i < all.size(); i++) data(i) = all[i];
+    xt::dump_npy(npy_file_name, data);
+
+    std::ofstream info_file;
+    info_file.open(info_file_name);
+
+    info_file << train_info.timestep << std::endl;
+    info_file << train_info.mini_batch_size << std::endl;
+    info_file << train_info.num_epochs << std::endl;
+    info_file << train_info.super_batch_size << std::endl;
+    info_file << train_info.num_super_batch << std::endl;
+    info_file << train_info.current_epoch << std::endl;
+    info_file << train_info.current_super_batch << std::endl;
+
+    info_file << train_info.lr << std::endl;
+    info_file << train_info.beta1 << std::endl;
+    info_file << train_info.beta1 << std::endl;
+    info_file << train_info.weight_decay << std::endl;
+
+    info_file.close();
+}
+
+void NeuralNetwork::load(std::string& file_prefix) {
+    std::string npy_file_name = file_prefix + "_weights.npy";
+    std::string info_file_name = file_prefix + "_info.txt";
+
+    xt::xtensor<float, 1> data = xt::load_npy<float>(npy_file_name);
+
+    size_t index = 0;
+    for (std::unique_ptr<Layer>& layer : layers) {
+        layer->load_weights(data, index);
+    }
+
+    std::ifstream info_file;
+    info_file.open(info_file_name);
+
+    info_file >> train_info.timestep;
+    info_file >> train_info.mini_batch_size;
+    info_file >> train_info.num_epochs;
+    info_file >> train_info.super_batch_size;
+    info_file >> train_info.num_super_batch;
+    info_file >> train_info.current_epoch;
+    info_file >> train_info.current_super_batch;
+
+    info_file >> train_info.lr;
+    info_file >> train_info.beta1;
+    info_file >> train_info.beta2;
+    info_file >> train_info.weight_decay;
+
+    info_file.close();
+}
+
+
+void NeuralNetwork::set_train_info(TrainInfo& p_train_info) {
+    if (p_train_info.timestep != 0) train_info.timestep = p_train_info.timestep;
+    if (p_train_info.mini_batch_size != 0) train_info.mini_batch_size = p_train_info.mini_batch_size;
+    if (p_train_info.num_epochs != 0) train_info.num_epochs = p_train_info.num_epochs;
+    if (p_train_info.super_batch_size != 0) train_info.super_batch_size = p_train_info.super_batch_size;
+    if (p_train_info.num_super_batch != 0) train_info.num_super_batch = p_train_info.num_super_batch;
+
+    if (p_train_info.lr != 0) train_info.lr = p_train_info.lr;
+    if (p_train_info.beta1 != 0) train_info.beta1 = p_train_info.beta1;
+    if (p_train_info.beta2 != 0) train_info.beta2 = p_train_info.beta2;
+    if (p_train_info.weight_decay != 0) train_info.weight_decay = p_train_info.weight_decay;
+    if (!p_train_info.save_prefix.empty()) train_info.save_prefix = p_train_info.save_prefix;
+
+    if (p_train_info.current_epoch != 0) train_info.current_epoch = p_train_info.current_epoch;
+    if (p_train_info.current_super_batch != 0) train_info.current_super_batch = p_train_info.current_super_batch;
 }

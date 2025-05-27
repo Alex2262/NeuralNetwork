@@ -26,4 +26,7 @@ void demo();
 void test_mnist();
 void test_mnist_cnn();
 
+void test_load();
+void test_resume_training();
+
 #endif //NEURALNETWORK_MNIST_H

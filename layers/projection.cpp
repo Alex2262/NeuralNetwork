@@ -21,8 +21,6 @@ Projection::Projection(const std::vector<size_t>& p_input_size, Embedding* p_emb
     activation_id = p_activation_id;
     activation_function = get_activation_function(activation_id);
     activation_derivative = get_activation_derivative(activation_id);
-
-    timestep = 0;
 }
 
 xt::xarray<float> Projection::feedforward(const xt::xarray<float>& inputs, Mode mode) {
