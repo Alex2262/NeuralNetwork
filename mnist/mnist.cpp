@@ -135,8 +135,8 @@ void demo() {
     std::vector<xt::xarray<float>> train_images, train_labels;
     std::vector<xt::xarray<float>> test_images, test_labels;
 
-    load_mnist_data("/Users/alexandertian/CLionProjects/NeuralNetwork/test/mnist-original.mat",
-                    train_images, train_labels, test_images, test_labels, 0.8, 70000);
+    std::string mnist_file_path = DIR_PATH + "NeuralNetwork/test/mnist-original.mat";
+    load_mnist_data(mnist_file_path, train_images, train_labels, test_images, test_labels, 0.8, 70000);
 
     std::vector<size_t> input_size = {784};
     NeuralNetwork nn(input_size, CostID::CEL);
@@ -158,8 +158,8 @@ void test_mnist() {
     std::vector<xt::xarray<float>> train_images, train_labels;
     std::vector<xt::xarray<float>> test_images, test_labels;
 
-    load_mnist_data("/Users/alexandertian/CLionProjects/NeuralNetwork/test/mnist-original.mat",
-                    train_images, train_labels, test_images, test_labels, 0.8, 70000);
+    std::string mnist_file_path = DIR_PATH + "NeuralNetwork/test/mnist-original.mat";
+    load_mnist_data(mnist_file_path, train_images, train_labels, test_images, test_labels, 0.8, 70000);
 
     // ~96.7% accuracy
     std::vector<size_t> input_size = {784};
@@ -204,7 +204,7 @@ void test_mnist() {
     train_info.beta1 = 0.9;
     train_info.beta2 = 0.999;
     train_info.weight_decay = 0.01;
-    train_info.save_prefix = "/Users/alexandertian/CLionProjects/NeuralNetwork/saved/mnist_nn";
+    train_info.save_prefix = DIR_PATH + "NeuralNetwork/saved/mnist_nn";
 
     nn.set_train_info(train_info);
     nn.AdamW(train_images, train_labels, test_images, test_labels);
@@ -216,8 +216,8 @@ void test_load() {
     std::vector<xt::xarray<float>> train_images, train_labels;
     std::vector<xt::xarray<float>> test_images, test_labels;
 
-    load_mnist_data("/Users/alexandertian/CLionProjects/NeuralNetwork/test/mnist-original.mat",
-                    train_images, train_labels, test_images, test_labels, 0.8, 70000);
+    std::string mnist_file_path = DIR_PATH + "NeuralNetwork/test/mnist-original.mat";
+    load_mnist_data(mnist_file_path, train_images, train_labels, test_images, test_labels, 0.8, 70000);
 
     auto conv_test_inputs = convert_vec_inputs(test_images);
     auto conv_test_labels = convert_vec_inputs(test_labels);
@@ -237,7 +237,7 @@ void test_load() {
     train_info.beta1 = 0.9;
     train_info.beta2 = 0.999;
     train_info.weight_decay = 0.01;
-    train_info.save_prefix = "/Users/alexandertian/CLionProjects/NeuralNetwork/saved/mnist_nn";
+    train_info.save_prefix = DIR_PATH + "NeuralNetwork/saved/mnist_nn";
 
     nn.set_train_info(train_info);
     // nn.AdamW(train_images, train_labels, test_images, test_labels);
@@ -255,8 +255,8 @@ void test_resume_training() {
     std::vector<xt::xarray<float>> train_images, train_labels;
     std::vector<xt::xarray<float>> test_images, test_labels;
 
-    load_mnist_data("/Users/alexandertian/CLionProjects/NeuralNetwork/test/mnist-original.mat",
-                    train_images, train_labels, test_images, test_labels, 0.8, 70000);
+    std::string mnist_file_path = DIR_PATH + "NeuralNetwork/test/mnist-original.mat";
+    load_mnist_data(mnist_file_path, train_images, train_labels, test_images, test_labels, 0.8, 70000);
 
     auto conv_test_inputs = convert_vec_inputs(test_images);
     auto conv_test_labels = convert_vec_inputs(test_labels);
@@ -276,7 +276,7 @@ void test_resume_training() {
     train_info.beta1 = 0.9;
     train_info.beta2 = 0.999;
     train_info.weight_decay = 0.01;
-    train_info.save_prefix = "/Users/alexandertian/CLionProjects/NeuralNetwork/mnist/saved/mnist_nn";
+    train_info.save_prefix = DIR_PATH + "NeuralNetwork/saved/mnist_nn";
 
     nn.set_train_info(train_info);
     nn.AdamW(train_images, train_labels, test_images, test_labels);
@@ -299,8 +299,8 @@ void test_mnist_cnn() {
     std::vector<xt::xarray<float>> train_images, train_labels;
     std::vector<xt::xarray<float>> test_images, test_labels;
 
-    load_mnist_data("/Users/alexandertian/CLionProjects/NeuralNetwork/test/mnist-original.mat",
-                    train_images, train_labels, test_images, test_labels, 0.8, 70000);
+    std::string mnist_file_path = DIR_PATH + "NeuralNetwork/test/mnist-original.mat";
+    load_mnist_data(mnist_file_path, train_images, train_labels, test_images, test_labels, 0.8, 70000);
 
     train_images = get_3d(train_images);
     test_images = get_3d(test_images);

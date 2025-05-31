@@ -7,19 +7,21 @@
 
 
 void train_llm() {
-    size_t last_epoch = 4;
+    size_t last_epoch = 0;
 
     TrainInfo train_info;
     train_info.num_super_batch = 100;
-    train_info.super_batch_size = 20;
+    train_info.super_batch_size = 2;
     train_info.mini_batch_size = 32;
     train_info.lr = 0.0003;
     train_info.beta1 = 0.9;
     train_info.beta2 = 0.99;
     train_info.weight_decay = 0.01;
-    train_info.save_prefix = "/Users/alexandertian/CLionProjects/NeuralNetwork/llm/saved/shakespeare_llm";
+    train_info.save_prefix = DIR_PATH + "NeuralNetwork/llm/saved/shakespeare_llm";
 
-    std::vector<std::string> file_names = {"/Users/alexandertian/CLionProjects/NeuralNetwork/llm/data/tiny_shakespeare.txt"};
+    std::string shakespeare_file_path = DIR_PATH + "NeuralNetwork/llm/data/tiny_shakespeare.txt";
+
+    std::vector<std::string> file_names = {shakespeare_file_path};
     LLM llm(8, 6, 64, 384, 12, 0.2, 0.8, file_names);
     llm.split_encoded(0.95);
 
@@ -34,7 +36,9 @@ void train_llm() {
     }
     // --
 
+    std::string output_path = DIR_PATH + "NeuralNetwork/llm/outputs/test1.txt";
+
     llm.train(train_info);
-    llm.gen_file("/Users/alexandertian/CLionProjects/NeuralNetwork/llm/outputs/test1.txt", 20000);
+    llm.gen_file(output_path, 20000);
     llm.run();
 }
