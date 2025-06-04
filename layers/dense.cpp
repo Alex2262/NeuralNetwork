@@ -14,6 +14,8 @@ Dense::Dense(const std::vector<std::size_t>& p_input_size, size_t p_num_neurons,
     output_size = p_input_size;
     output_size[output_size.size() - 1] = out_neurons;
 
+    activation_id = p_activation_id;
+
     float stddev = std::sqrt(2.0f / static_cast<float>(inp_neurons + out_neurons));
     if (activation_id == ActivationID::RELU) stddev = std::sqrt(2.0f / static_cast<float>(inp_neurons));
 
@@ -28,8 +30,6 @@ Dense::Dense(const std::vector<std::size_t>& p_input_size, size_t p_num_neurons,
 
     v_weights = xt::zeros_like(weights);
     v_biases = xt::zeros_like(biases);
-
-    activation_id = p_activation_id;
 
     activation_function = get_activation_function(activation_id);
     activation_derivative = get_activation_derivative(activation_id);
