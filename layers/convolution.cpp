@@ -19,6 +19,8 @@ Convolution::Convolution(std::vector<size_t>& p_input_size, size_t p_num_filters
 
     output_size = {out_h, out_w, num_filters};
 
+    activation_id = p_activation_id;
+
     size_t amt = filter_size * filter_size * input_size[2];
     if (activation_id != ActivationID::RELU) amt += filter_size * filter_size * num_filters;
 
@@ -34,8 +36,6 @@ Convolution::Convolution(std::vector<size_t>& p_input_size, size_t p_num_filters
 
     v_weights = xt::zeros_like(weights);
     v_biases = xt::zeros_like(biases);
-
-    activation_id = p_activation_id;
 
     activation_function = get_activation_function(activation_id);
     activation_derivative = get_activation_derivative(activation_id);
