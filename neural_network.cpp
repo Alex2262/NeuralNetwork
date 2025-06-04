@@ -367,7 +367,7 @@ void NeuralNetwork::save(std::string& file_prefix) {
 
     info_file << train_info.lr << std::endl;
     info_file << train_info.beta1 << std::endl;
-    info_file << train_info.beta1 << std::endl;
+    info_file << train_info.beta2 << std::endl;
     info_file << train_info.weight_decay << std::endl;
 
     info_file.close();
