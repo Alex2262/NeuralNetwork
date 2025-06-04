@@ -12,7 +12,8 @@ void load_mnist_data(const std::string& file_path,
                      std::vector<xt::xarray<float>>& train_labels,
                      std::vector<xt::xarray<float>>& test_images,
                      std::vector<xt::xarray<float>>& test_labels,
-                     float train_ratio);
+                     float train_ratio,
+                     size_t total_amount);
 
 std::vector<xt::xarray<float>> get_3d(std::vector<xt::xarray<float>>& images);
 
