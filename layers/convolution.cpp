@@ -82,7 +82,7 @@ xt::xarray<float> Convolution::feedforward(const xt::xarray<float>& inputs, Mode
 xt::xarray<float> Convolution::backprop(const xt::xarray<float>& p_delta, bool calc_delta_activation) {
     size_t batch_size = input_activations.shape()[0];
 
-    xt::xtensor<float, 4> delta = p_delta + res_delta;;
+    xt::xtensor<float, 4> delta = p_delta + res_delta;
 
     if (calc_delta_activation) {
         delta = delta * activation_derivative(outputs);
