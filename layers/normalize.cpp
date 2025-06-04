@@ -71,8 +71,8 @@ xt::xarray<float> Normalize::backprop(const xt::xarray<float>& p_delta, bool cal
 }
 
 void Normalize::update(float lr) {
-    gamma -= grad_gamma;
-    beta -= grad_beta;
+    gamma -= lr * grad_gamma;
+    beta -= lr * grad_beta;
 
     grad_gamma.fill(0);
     grad_beta.fill(0);
