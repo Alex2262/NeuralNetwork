@@ -6,7 +6,7 @@
 #include <functional>
 #include <string>
 
-#define DIR_PATH "/Users/alexandertian/CLionProjects/";
+inline const std::string DIR_PATH = "/Users/alexandertian/CLionProjects/";
 
 using ActivationFunction = std::function<xt::xarray<float>(const xt::xarray<float>&)>;
 using ActivationDerivative = std::function<xt::xarray<float>(const xt::xarray<float>&)>;
