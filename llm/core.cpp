@@ -292,12 +292,12 @@ void LLM::train(TrainInfo p_train_info) {
     size_t mini_batch_size = train_info->mini_batch_size;
     size_t start_super_batch = train_info->current_super_batch + 1;
 
-    float lr = train_info->lr;
+    float base_lr = train_info->lr;
     float beta1 = train_info->beta1;
     float beta2 = train_info->beta2;
     float weight_decay = train_info->weight_decay;
 
-    if (num_super_batch == 0 || super_batch_size == 0 || mini_batch_size == 0 || lr == 0 || beta1 == 0 || beta2 == 0 || weight_decay == 0) {
+    if (num_super_batch == 0 || super_batch_size == 0 || mini_batch_size == 0 || base_lr == 0 || beta1 == 0 || beta2 == 0 || weight_decay == 0) {
         throw std::runtime_error("Set LLM Train Info: num_super_batch | super_batch_size | mini_batch_size | lr | beta1 | beta2 | weight_decay");
     }
 
@@ -310,11 +310,17 @@ void LLM::train(TrainInfo p_train_info) {
     auto start_time = std::chrono::high_resolution_clock::now();
     float sum_eval_time = 0;
 
+    size_t total_steps = num_super_batch * super_batch_size;
+
     for (size_t super_batch = start_super_batch; super_batch <= num_super_batch; super_batch++) {
         for (size_t mini_batch = 1; mini_batch <= super_batch_size; mini_batch++) {
             num_tokens += mini_batch_size * max_seq_len;
 
             auto [train_data, train_labels] = get_random_batch(mini_batch_size);
+
+            size_t current_step = (super_batch - 1) * super_batch_size + mini_batch;
+            float lr = get_lr_linear_warmup_cosine_decay(current_step, total_steps, base_lr);
+
             nn.update_adamw(train_data, train_labels, lr, beta1, beta2, weight_decay);
 
             auto curr = std::chrono::high_resolution_clock::now();

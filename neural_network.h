@@ -23,6 +23,8 @@ struct TrainInfo {
     size_t current_super_batch = 0;
 };
 
+float get_lr_linear_warmup_cosine_decay(size_t current_step, size_t end_step, float base_lr, float warmup_ratio = 0.05f);
+
 class NeuralNetwork {
 
 private:

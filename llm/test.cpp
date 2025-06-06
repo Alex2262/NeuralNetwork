@@ -11,7 +11,7 @@ void train_llm() {
 
     TrainInfo train_info;
     train_info.num_super_batch = 100;
-    train_info.super_batch_size = 2;
+    train_info.super_batch_size = 20;
     train_info.mini_batch_size = 32;
     train_info.lr = 0.0003;
     train_info.beta1 = 0.9;

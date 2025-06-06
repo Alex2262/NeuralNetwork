@@ -7,6 +7,25 @@
 #include <xtensor/io/xnpy.hpp>
 #include "neural_network.h"
 
+
+float get_lr_linear_warmup_cosine_decay(size_t current_step, size_t end_step, float base_lr, float warmup_ratio) {
+    auto warmup_steps = static_cast<size_t>(warmup_ratio * static_cast<float>(end_step));
+
+    // Linear Warmup
+    if (current_step < warmup_steps) {
+        return base_lr * static_cast<float>(current_step) / static_cast<float>(warmup_steps);
+    }
+
+    // Cosine Decay
+    else if (current_step <= end_step) {
+        float progress = static_cast<float>(current_step - warmup_steps) / static_cast<float>(end_step - warmup_steps);
+        return base_lr * 0.5f * (1.0f + static_cast<float>(std::cos(M_PI * progress)));
+    }
+
+    return 0.0f;
+}
+
+
 NeuralNetwork::NeuralNetwork(std::vector<size_t> p_input_size, CostID p_cost_id) {
     input_size = p_input_size;
     cost_id = p_cost_id;
