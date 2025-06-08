@@ -183,44 +183,36 @@ void Attention::update_adamw(float lr, float beta1, float beta2, float weight_de
 
 void Attention::save_weights(std::vector<float>& all) {
     save_2d(all, weights_q);
-    save_2d(all, grad_weights_q);
     save_2d(all, m_weights_q);
     save_2d(all, v_weights_q);
 
     save_2d(all, weights_k);
-    save_2d(all, grad_weights_k);
     save_2d(all, m_weights_k);
     save_2d(all, v_weights_k);
 
     save_2d(all, weights_v);
-    save_2d(all, grad_weights_v);
     save_2d(all, m_weights_v);
     save_2d(all, v_weights_v);
 
     save_2d(all, weights_o);
-    save_2d(all, grad_weights_o);
     save_2d(all, m_weights_o);
     save_2d(all, v_weights_o);
 }
 
 void Attention::load_weights(xt::xtensor<float, 1>& all, size_t& index) {
     load_2d(all, weights_q, index);
-    load_2d(all, grad_weights_q, index);
     load_2d(all, m_weights_q, index);
     load_2d(all, v_weights_q, index);
 
     load_2d(all, weights_k, index);
-    load_2d(all, grad_weights_k, index);
     load_2d(all, m_weights_k, index);
     load_2d(all, v_weights_k, index);
 
     load_2d(all, weights_v, index);
-    load_2d(all, grad_weights_v, index);
     load_2d(all, m_weights_v, index);
     load_2d(all, v_weights_v, index);
 
     load_2d(all, weights_o, index);
-    load_2d(all, grad_weights_o, index);
     load_2d(all, m_weights_o, index);
     load_2d(all, v_weights_o, index);
 }

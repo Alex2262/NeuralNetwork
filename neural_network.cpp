@@ -375,6 +375,9 @@ void NeuralNetwork::save(std::string& file_prefix) {
 
     std::ofstream info_file;
     info_file.open(info_file_name);
+    if (!info_file.is_open()) {
+        throw std::runtime_error("Could not open " + info_file_name);
+    }
 
     info_file << train_info.timestep << std::endl;
     info_file << train_info.mini_batch_size << std::endl;
@@ -401,10 +404,17 @@ void NeuralNetwork::load(std::string& file_prefix) {
     size_t index = 0;
     for (std::unique_ptr<Layer>& layer : layers) {
         layer->load_weights(data, index);
+        layer->zero_grad();
+    }
+    if (index != data.size()) {
+        throw std::runtime_error("Weight file size mismatch when loading " + npy_file_name);
     }
 
     std::ifstream info_file;
     info_file.open(info_file_name);
+    if (!info_file.is_open()) {
+        throw std::runtime_error("Could not open " + info_file_name);
+    }
 
     info_file >> train_info.timestep;
     info_file >> train_info.mini_batch_size;

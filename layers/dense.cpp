@@ -94,24 +94,20 @@ void Dense::update_adamw(float lr, float beta1, float beta2, float weight_decay,
 
 void Dense::save_weights(std::vector<float>& all) {
     save_2d(all, weights);
-    save_2d(all, grad_weights);
     save_2d(all, m_weights);
     save_2d(all, v_weights);
 
     save_1d(all, biases);
-    save_1d(all, grad_biases);
     save_1d(all, m_biases);
     save_1d(all, v_biases);
 }
 
 void Dense::load_weights(xt::xtensor<float, 1>& all, size_t& index) {
     load_2d(all, weights, index);
-    load_2d(all, grad_weights, index);
     load_2d(all, m_weights, index);
     load_2d(all, v_weights, index);
 
     load_1d(all, biases, index);
-    load_1d(all, grad_biases, index);
     load_1d(all, m_biases, index);
     load_1d(all, v_biases, index);
 }

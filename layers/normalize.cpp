@@ -91,24 +91,20 @@ void Normalize::update_adamw(float lr, float beta1, float beta2, float weight_de
 
 void Normalize::save_weights(std::vector<float>& all) {
     save_1d(all, gamma);
-    save_1d(all, grad_gamma);
     save_1d(all, m_gamma);
     save_1d(all, v_gamma);
 
     save_1d(all, beta);
-    save_1d(all, grad_beta);
     save_1d(all, m_beta);
     save_1d(all, v_beta);
 }
 
 void Normalize::load_weights(xt::xtensor<float, 1>& all, size_t& index) {
     load_1d(all, gamma, index);
-    load_1d(all, grad_gamma, index);
     load_1d(all, m_gamma, index);
     load_1d(all, v_gamma, index);
 
     load_1d(all, beta, index);
-    load_1d(all, grad_beta, index);
     load_1d(all, m_beta, index);
     load_1d(all, v_beta, index);
 }

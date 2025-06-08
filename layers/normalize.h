@@ -50,6 +50,12 @@ public:
 
     void save_weights(std::vector<float>& all) override;
     void load_weights(xt::xtensor<float, 1>& all, size_t& index) override;
+
+    void zero_grad() override {
+        grad_gamma.fill(0);
+        grad_beta.fill(0);
+        res_delta = 0;
+    }
 };
 
 

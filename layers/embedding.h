@@ -46,6 +46,12 @@ public:
 
     void save_weights(std::vector<float>& all) override;
     void load_weights(xt::xtensor<float, 1>& all, size_t& index) override;
+
+    void zero_grad() override {
+        grad_embedding_matrix.fill(0);
+        grad_positional_matrix.fill(0);
+        res_delta = 0;
+    }
 };
 
 #endif //NEURALNETWORK_EMBEDDING_H

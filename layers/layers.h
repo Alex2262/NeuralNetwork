@@ -35,6 +35,11 @@ public:
 
     virtual void save_weights(std::vector<float>& all) = 0;
     virtual void load_weights(xt::xtensor<float, 1>& all, size_t& index) = 0;
+
+    // Clear gradient buffers and residual deltas. Layers that store
+    // trainable parameters should override this if they keep gradient
+    // tensors between updates.
+    virtual void zero_grad() { res_delta = 0; }
 };
 
 
