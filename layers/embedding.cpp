@@ -97,24 +97,20 @@ void Embedding::update_adamw(float lr, float beta1, float beta2, float weight_de
 
 void Embedding::save_weights(std::vector<float>& all) {
     save_2d(all, embedding_matrix);
-    save_2d(all, grad_embedding_matrix);
     save_2d(all, m_embedding_matrix);
     save_2d(all, v_embedding_matrix);
 
     save_2d(all, positional_matrix);
-    save_2d(all, grad_positional_matrix);
     save_2d(all, m_positional_matrix);
     save_2d(all, v_positional_matrix);
 }
 
 void Embedding::load_weights(xt::xtensor<float, 1>& all, size_t& index) {
     load_2d(all, embedding_matrix, index);
-    load_2d(all, grad_embedding_matrix, index);
     load_2d(all, m_embedding_matrix, index);
     load_2d(all, v_embedding_matrix, index);
 
     load_2d(all, positional_matrix, index);
-    load_2d(all, grad_positional_matrix, index);
     load_2d(all, m_positional_matrix, index);
     load_2d(all, v_positional_matrix, index);
 }

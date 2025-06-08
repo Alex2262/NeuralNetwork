@@ -162,24 +162,20 @@ void Convolution::update_adamw(float lr, float beta1, float beta2, float weight_
 
 void Convolution::save_weights(std::vector<float>& all) {
     save_4d(all, weights);
-    save_4d(all, grad_weights);
     save_4d(all, m_weights);
     save_4d(all, v_weights);
 
     save_1d(all, biases);
-    save_1d(all, grad_biases);
     save_1d(all, m_biases);
     save_1d(all, v_biases);
 }
 
 void Convolution::load_weights(xt::xtensor<float, 1>& all, size_t& index) {
     load_4d(all, weights, index);
-    load_4d(all, grad_weights, index);
     load_4d(all, m_weights, index);
     load_4d(all, v_weights, index);
 
     load_1d(all, biases, index);
-    load_1d(all, grad_biases, index);
     load_1d(all, m_biases, index);
     load_1d(all, v_biases, index);
 }
