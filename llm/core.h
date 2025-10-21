@@ -19,7 +19,7 @@ class LLM {
 private:
     std::vector<size_t> input_size;
 
-    LLM_Mode llm_mode = LLM_Mode::LOWER_CHARS;
+    LLM_Mode llm_mode = LLM_Mode::CHARS;
 
     size_t MAX_LINES = 40000;
 

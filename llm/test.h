@@ -5,6 +5,7 @@
 #ifndef NEURALNETWORK_TEST_H
 #define NEURALNETWORK_TEST_H
 
+void train_llm_names();
 void train_llm();
 
 #endif //NEURALNETWORK_TEST_H

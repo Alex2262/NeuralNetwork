@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <random>
-#include <opencv2/opencv.hpp>
+//#include <opencv2/opencv.hpp>
 #include <xtensor/containers/xarray.hpp>
 
 #include "matio.h"
@@ -104,6 +104,7 @@ std::vector<xt::xarray<float>> get_3d(std::vector<xt::xarray<float>>& images) {
 
 
 void show_image(const xt::xarray<float>& image, int label, int pred, float prob) {
+    /*
     cv::Mat img_mat(28, 28, CV_64F);
     for (int i = 0; i < 28; ++i) {
         for (int j = 0; j < 28; ++j) {
@@ -128,6 +129,7 @@ void show_image(const xt::xarray<float>& image, int label, int pred, float prob)
 
     cv::imshow("MNIST Image", img_mat);
     cv::waitKey(0);
+     */
 }
 
 
@@ -158,14 +160,14 @@ void test_mnist() {
     std::vector<xt::xarray<float>> train_images, train_labels;
     std::vector<xt::xarray<float>> test_images, test_labels;
 
-    std::string mnist_file_path = DIR_PATH + "NeuralNetwork/test/mnist-original.mat";
+    std::string mnist_file_path = DIR_PATH + "NeuralNetwork/mnist/mnist-original.mat";
     load_mnist_data(mnist_file_path, train_images, train_labels, test_images, test_labels, 0.8, 70000);
 
     // ~96.7% accuracy
     std::vector<size_t> input_size = {784};
     NeuralNetwork nn(input_size, CostID::CEL);
 
-    nn.add_layer<Dense>(256, ActivationID::NONE);
+    nn.add_layer<Dense>(15, ActivationID::NONE);
     nn.add_layer<Normalize>();
     nn.add_layer<Activation>(ActivationID::RELU);
     nn.add_layer<Dense>(10, ActivationID::SOFTMAX);
@@ -198,13 +200,13 @@ void test_mnist() {
     // nn.SGD(train_images, train_labels, test_images, test_labels, 6, 64, 0.1);
 
     TrainInfo train_info;
-    train_info.num_epochs = 10;
+    train_info.num_epochs = 5;
     train_info.mini_batch_size = 64;
-    train_info.lr = 0.001;
+    train_info.lr = 0.015;
     train_info.beta1 = 0.9;
     train_info.beta2 = 0.999;
     train_info.weight_decay = 0.01;
-    train_info.save_prefix = DIR_PATH + "NeuralNetwork/saved/mnist_nn";
+    train_info.save_prefix = DIR_PATH + "NeuralNetwork/mnist/saved/mnist_nn";
 
     nn.set_train_info(train_info);
     nn.AdamW(train_images, train_labels, test_images, test_labels);
@@ -216,7 +218,7 @@ void test_load() {
     std::vector<xt::xarray<float>> train_images, train_labels;
     std::vector<xt::xarray<float>> test_images, test_labels;
 
-    std::string mnist_file_path = DIR_PATH + "NeuralNetwork/test/mnist-original.mat";
+    std::string mnist_file_path = DIR_PATH + "NeuralNetwork/mnist/mnist-original.mat";
     load_mnist_data(mnist_file_path, train_images, train_labels, test_images, test_labels, 0.8, 70000);
 
     auto conv_test_inputs = convert_vec_inputs(test_images);

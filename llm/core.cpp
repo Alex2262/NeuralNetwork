@@ -358,8 +358,10 @@ void LLM::train(TrainInfo p_train_info) {
 
         train_info->current_super_batch = super_batch;
 
-        std::string save_prefix = train_info->save_prefix + "_sb_" + std::to_string(super_batch);
-        nn.save(save_prefix);
+        if (!train_info->save_prefix.empty()) {
+            std::string save_prefix = train_info->save_prefix + "_sb_" + std::to_string(super_batch);
+            nn.save(save_prefix);
+        }
     }
 }
 
